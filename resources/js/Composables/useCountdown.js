@@ -47,7 +47,7 @@ export function useCountdown(targetDate) {
 
   onUnmounted(() => {
     stopCountdown()
-  })
+  })    
 
   return {
     days,

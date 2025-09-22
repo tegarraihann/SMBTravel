@@ -64,9 +64,9 @@
         <div>
           <h4 class="text-lg font-semibold mb-4 text-yellow-400">Layanan</h4>
           <ul class="space-y-2">
-            <li><Link href="/umroh-reguler" class="text-gray-300 hover:text-white transition-colors">Umroh Reguler</Link></li>
-            <li><Link href="/umroh-plus" class="text-gray-300 hover:text-white transition-colors">Umroh Plus</Link></li>
-            <li><Link href="/umroh-vip" class="text-gray-300 hover:text-white transition-colors">Umroh VIP</Link></li>
+            <li><Link href="/umroh-reguler" class="text-gray-300 hover:text-white transition-colors">City Tour Malaysia</Link></li>
+            <li><Link href="/umroh-plus" class="text-gray-300 hover:text-white transition-colors">Plus Tha`if</Link></li>
+            <li><Link href="/umroh-vip" class="text-gray-300 hover:text-white transition-colors">Plus Tha`if dan Kereta Cepat</Link></li>
             <li><Link href="/manasik" class="text-gray-300 hover:text-white transition-colors">Manasik</Link></li>
             <li><Link href="/visa" class="text-gray-300 hover:text-white transition-colors">Pengurusan Visa</Link></li>
           </ul>
@@ -100,8 +100,8 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
               </svg>
               <span class="text-gray-300">
-                Jl. Raya Umroh No. 123<br>
-                Jakarta Selatan 12345
+                Jl. Parit Indah No. 151<br>
+                Pekanbaru, Riau
               </span>
             </div>
           </div>

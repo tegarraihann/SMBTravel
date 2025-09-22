@@ -33,12 +33,23 @@ const showingNavigationDropdown = ref(false);
                             <div
                                 class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex"
                             >
-                                <NavLink
-                                    :href="route('dashboard')"
-                                    :active="route().current('dashboard')"
-                                >
-                                    Dashboard
-                                </NavLink>
+                                <!-- Dynamic navigation based on user role -->
+                                <template v-if="$page.props.auth.user.role?.name === 'jamaah'">
+                                    <NavLink
+                                        :href="route('jamaah.dashboard')"
+                                        :active="route().current('jamaah.dashboard')"
+                                    >
+                                        Dashboard
+                                    </NavLink>
+                                </template>
+                                <template v-else>
+                                    <NavLink
+                                        :href="route('dashboard')"
+                                        :active="route().current('dashboard')"
+                                    >
+                                        Dashboard
+                                    </NavLink>
+                                </template>
                             </div>
                         </div>
 
@@ -140,12 +151,41 @@ const showingNavigationDropdown = ref(false);
                     class="sm:hidden"
                 >
                     <div class="space-y-1 pb-3 pt-2">
-                        <ResponsiveNavLink
-                            :href="route('dashboard')"
-                            :active="route().current('dashboard')"
-                        >
-                            Dashboard
-                        </ResponsiveNavLink>
+                        <!-- Dynamic mobile navigation based on user role -->
+                        <template v-if="$page.props.auth.user.role?.name === 'jamaah'">
+                            <ResponsiveNavLink
+                                :href="route('jamaah.dashboard')"
+                                :active="route().current('jamaah.dashboard')"
+                            >
+                                Dashboard
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink
+                                :href="route('jamaah.pembayaran')"
+                                :active="route().current('jamaah.pembayaran')"
+                            >
+                                Pembayaran
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink
+                                :href="route('jamaah.dokumen')"
+                                :active="route().current('jamaah.dokumen')"
+                            >
+                                Dokumen
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink
+                                :href="route('jamaah.status')"
+                                :active="route().current('jamaah.status')"
+                            >
+                                Status
+                            </ResponsiveNavLink>
+                        </template>
+                        <template v-else>
+                            <ResponsiveNavLink
+                                :href="route('dashboard')"
+                                :active="route().current('dashboard')"
+                            >
+                                Dashboard
+                            </ResponsiveNavLink>
+                        </template>
                     </div>
 
                     <!-- Responsive Settings Options -->

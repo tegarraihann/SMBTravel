@@ -15,6 +15,9 @@
     <!-- Gallery Section -->
     <GallerySection :gallery="gallery" />
 
+    <!-- News Section -->
+    <NewsSection :news="news" />
+
     <!-- Manasik Section -->
     <ManasikSection />
   </LandingLayout>
@@ -27,12 +30,14 @@ import PaketUmrohSection from '@/Components/Landing/PaketUmrohSection.vue'
 import TestimoniSection from '@/Components/Landing/TestimoniSection.vue'
 import TimelineSection from '@/Components/Landing/TimelineSection.vue'
 import GallerySection from '@/Components/Landing/GallerySection.vue'
+import NewsSection from '@/Components/Landing/NewsSection.vue'
 import ManasikSection from '@/Components/Landing/ManasikSection.vue'
 
 defineProps({
   packages: Array,
   testimonials: Array,
   gallery: Array,
+  news: Array,
   countdown: Object
 })
 </script>

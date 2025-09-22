@@ -3,11 +3,8 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <!-- Section Header -->
       <div class="text-center mb-16">
-        <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
-          Testimoni
-          <span class="bg-gradient-to-r from-blue-600 to-red-600 bg-clip-text text-transparent">
-            Jamaah
-          </span>
+        <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+          Testimoni Jamaah
         </h2>
         <p class="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
           Dengarkan pengalaman spiritual jamaah SMB Travel yang telah menunaikan ibadah umroh
@@ -16,19 +13,19 @@
         <!-- Statistics -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
           <div class="text-center">
-            <div class="text-3xl sm:text-4xl font-bold text-blue-600 mb-2">1000+</div>
+            <div class="text-2xl sm:text-3xl font-bold text-blue-600 mb-2">1000+</div>
             <div class="text-gray-600 font-medium">Jamaah Terlayani</div>
           </div>
           <div class="text-center">
-            <div class="text-3xl sm:text-4xl font-bold text-red-600 mb-2">15+</div>
+            <div class="text-2xl sm:text-3xl font-bold text-red-600 mb-2">15+</div>
             <div class="text-gray-600 font-medium">Tahun Pengalaman</div>
           </div>
           <div class="text-center">
-            <div class="text-3xl sm:text-4xl font-bold text-yellow-600 mb-2">4.9</div>
+            <div class="text-2xl sm:text-3xl font-bold text-yellow-600 mb-2">4.9</div>
             <div class="text-gray-600 font-medium">Rating Kepuasan</div>
           </div>
           <div class="text-center">
-            <div class="text-3xl sm:text-4xl font-bold text-green-600 mb-2">100%</div>
+            <div class="text-2xl sm:text-3xl font-bold text-slate-600 mb-2">100%</div>
             <div class="text-gray-600 font-medium">Keberangkatan</div>
           </div>
         </div>
@@ -37,7 +34,7 @@
       <!-- Testimonials Carousel -->
       <div class="relative">
         <!-- Main Testimonial Display -->
-        <div class="bg-gradient-to-br from-blue-50 to-red-50 rounded-2xl p-8 mb-8">
+        <div class="bg-slate-50 border border-gray-200 rounded-lg p-8 mb-8">
           <div class="max-w-4xl mx-auto">
             <div class="flex flex-col lg:flex-row items-center lg:items-start space-y-6 lg:space-y-0 lg:space-x-8">
               <!-- Profile Image -->
@@ -48,23 +45,11 @@
                     :alt="currentTestimonial.name"
                     class="w-24 h-24 lg:w-32 lg:h-32 rounded-full object-cover shadow-xl border-4 border-white"
                   >
-                  <!-- Verified Badge -->
-                  <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                    </svg>
-                  </div>
                 </div>
               </div>
 
               <!-- Testimonial Content -->
               <div class="flex-1 text-center lg:text-left">
-                <!-- Quote Icon -->
-                <div class="mb-6">
-                  <svg class="w-12 h-12 text-blue-300 mx-auto lg:mx-0" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h4v10h-10z"/>
-                  </svg>
-                </div>
 
                 <!-- Rating Stars -->
                 <div class="flex justify-center lg:justify-start mb-4">
@@ -132,7 +117,7 @@
             v-for="(testimonial, index) in testimonials"
             :key="testimonial.id"
             @click="setCurrentTestimonial(index)"
-            class="bg-white rounded-xl shadow-lg p-6 cursor-pointer transition-all duration-300 hover:shadow-xl border-2"
+            class="bg-white rounded-lg border border-gray-200 p-6 cursor-pointer transition-all duration-200 hover:border-blue-600 hover:shadow-md"
             :class="{
               'border-blue-500 ring-2 ring-blue-200': index === currentIndex,
               'border-gray-200 hover:border-blue-300': index !== currentIndex
@@ -168,27 +153,26 @@
 
       <!-- Call to Action -->
       <div class="mt-16 text-center">
-        <div class="bg-gradient-to-r from-blue-600 to-red-600 rounded-2xl p-8 text-white">
-          <h3 class="text-2xl sm:text-3xl font-bold mb-4">
-            Bergabunglah dengan Ribuan Jamaah Puas Lainnya
+        <div class="bg-slate-800 rounded-lg p-8 text-white">
+          <h3 class="text-2xl font-bold mb-4">
+            Bergabunglah dengan Jamaah Kami
           </h3>
-          <p class="text-lg opacity-90 mb-6 max-w-2xl mx-auto">
-            Rasakan pengalaman spiritual yang tak terlupakan bersama SMB Travel.
-            Dapatkan pelayanan terbaik dan bimbingan manasik yang komprehensif.
+          <p class="text-lg text-gray-300 mb-6 max-w-xl mx-auto">
+            Rasakan pengalaman spiritual yang berkesan bersama SMB Travel dengan pelayanan terbaik.
           </p>
           <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <a
               :href="`https://wa.me/${BRAND.whatsapp.replace(/[^0-9]/g, '')}`"
               target="_blank"
-              class="bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-full font-bold transition-all duration-300 transform hover:scale-105"
+              class="bg-yellow-500 hover:bg-yellow-600 text-slate-900 px-6 py-3 rounded-lg font-semibold transition-colors duration-200"
             >
-              📝 Daftar Umroh Sekarang
+              Daftar Umroh Sekarang
             </a>
             <button
               @click="scrollToPackages"
-              class="border-2 border-white text-white hover:bg-white hover:text-blue-600 px-8 py-4 rounded-full font-bold transition-all duration-300"
+              class="bg-white hover:bg-gray-100 text-slate-800 px-6 py-3 rounded-lg font-semibold transition-colors duration-200"
             >
-              📋 Lihat Semua Paket
+              Lihat Semua Paket
             </button>
           </div>
         </div>

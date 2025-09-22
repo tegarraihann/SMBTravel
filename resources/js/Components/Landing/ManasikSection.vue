@@ -1,13 +1,10 @@
 <template>
-  <section class="py-20 bg-gradient-to-br from-blue-50 to-gray-50">
+  <section class="py-20 bg-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <!-- Section Header -->
       <div class="text-center mb-16">
         <h2 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
-          Bimbingan
-          <span class="bg-gradient-to-r from-blue-600 to-red-600 bg-clip-text text-transparent">
-            Manasik
-          </span>
+          Bimbingan <span class="text-blue-600">Manasik</span>
         </h2>
         <p class="text-xl text-gray-600 max-w-3xl mx-auto">
           Persiapan spiritual dan praktis yang komprehensif untuk memastikan ibadah umroh Anda sempurna
@@ -20,8 +17,8 @@
         <div class="space-y-8">
           <div class="bg-white rounded-2xl shadow-lg p-8">
             <div class="flex items-center mb-6">
-              <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
                 </svg>
               </div>
@@ -30,7 +27,7 @@
 
             <div class="space-y-4">
               <div class="flex items-start">
-                <svg class="w-6 h-6 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <svg class="w-6 h-6 text-blue-600 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                 </svg>
                 <div>
@@ -40,7 +37,7 @@
               </div>
 
               <div class="flex items-start">
-                <svg class="w-6 h-6 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <svg class="w-6 h-6 text-blue-600 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                 </svg>
                 <div>
@@ -50,7 +47,7 @@
               </div>
 
               <div class="flex items-start">
-                <svg class="w-6 h-6 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <svg class="w-6 h-6 text-blue-600 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                 </svg>
                 <div>
@@ -60,7 +57,7 @@
               </div>
 
               <div class="flex items-start">
-                <svg class="w-6 h-6 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <svg class="w-6 h-6 text-blue-600 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                 </svg>
                 <div>
@@ -72,7 +69,7 @@
           </div>
 
           <!-- Schedule Info -->
-          <div class="bg-gradient-to-r from-blue-600 to-red-600 rounded-2xl p-8 text-white">
+          <div class="bg-slate-800 rounded-2xl p-8 text-white">
             <h3 class="text-2xl font-bold mb-4">📅 Jadwal Manasik Rutin</h3>
             <div class="space-y-3">
               <div class="flex items-center">
@@ -101,8 +98,8 @@
         <div class="space-y-6">
           <div class="bg-white rounded-2xl shadow-lg p-8">
             <h3 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
-              <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
-                <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
                 </svg>
               </div>
@@ -111,7 +108,7 @@
 
             <div class="space-y-4">
               <!-- Session 1 -->
-              <div class="border-l-4 border-blue-500 pl-4 py-2">
+              <div class="border-l-4 border-red-600 pl-4 py-2">
                 <h4 class="font-bold text-gray-900 mb-1">Sesi 1: Dasar-Dasar Umroh</h4>
                 <ul class="text-sm text-gray-600 space-y-1">
                   <li>• Sejarah dan makna ibadah umroh</li>
@@ -122,7 +119,7 @@
               </div>
 
               <!-- Session 2 -->
-              <div class="border-l-4 border-red-500 pl-4 py-2">
+              <div class="border-l-4 border-blue-600 pl-4 py-2">
                 <h4 class="font-bold text-gray-900 mb-1">Sesi 2: Ihram & Miqat</h4>
                 <ul class="text-sm text-gray-600 space-y-1">
                   <li>• Cara berihram yang benar</li>
@@ -133,7 +130,7 @@
               </div>
 
               <!-- Session 3 -->
-              <div class="border-l-4 border-yellow-500 pl-4 py-2">
+              <div class="border-l-4 border-yellow-600 pl-4 py-2">
                 <h4 class="font-bold text-gray-900 mb-1">Sesi 3: Tawaf & Sa'i</h4>
                 <ul class="text-sm text-gray-600 space-y-1">
                   <li>• Tata cara tawaf 7 putaran</li>
@@ -144,7 +141,7 @@
               </div>
 
               <!-- Session 4 -->
-              <div class="border-l-4 border-green-500 pl-4 py-2">
+              <div class="border-l-4 border-slate-600 pl-4 py-2">
                 <h4 class="font-bold text-gray-900 mb-1">Sesi 4: Tahallul & Ziarah</h4>
                 <ul class="text-sm text-gray-600 space-y-1">
                   <li>• Cara tahallul yang benar</li>
@@ -155,7 +152,7 @@
               </div>
 
               <!-- Session 5 -->
-              <div class="border-l-4 border-purple-500 pl-4 py-2">
+              <div class="border-l-4 border-red-600 pl-4 py-2">
                 <h4 class="font-bold text-gray-900 mb-1">Sesi 5: Tips Praktis</h4>
                 <ul class="text-sm text-gray-600 space-y-1">
                   <li>• Kesehatan selama umroh</li>
@@ -215,7 +212,7 @@
             <a
               :href="`https://wa.me/${BRAND.whatsapp.replace(/[^0-9]/g, '')}`"
               target="_blank"
-              class="bg-gradient-to-r from-blue-600 to-red-600 hover:from-blue-700 hover:to-red-700 text-white px-8 py-4 rounded-full font-bold transition-all duration-300 transform hover:scale-105 shadow-lg"
+              class="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-full font-bold transition-all duration-300 shadow-lg"
             >
               📞 Daftar Manasik Gratis
             </a>
@@ -230,19 +227,19 @@
           <!-- Trust Badge -->
           <div class="mt-6 flex items-center justify-center space-x-4 text-sm text-gray-500">
             <div class="flex items-center">
-              <svg class="w-4 h-4 text-green-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <svg class="w-4 h-4 text-blue-600 mr-1" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
               </svg>
               <span>Berizin Kemenag</span>
             </div>
             <div class="flex items-center">
-              <svg class="w-4 h-4 text-green-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <svg class="w-4 h-4 text-blue-600 mr-1" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
               </svg>
               <span>15+ Tahun Pengalaman</span>
             </div>
             <div class="flex items-center">
-              <svg class="w-4 h-4 text-green-500 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <svg class="w-4 h-4 text-blue-600 mr-1" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
               </svg>
               <span>1000+ Jamaah Terlayani</span>

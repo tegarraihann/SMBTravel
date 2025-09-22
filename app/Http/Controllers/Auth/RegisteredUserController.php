@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Role;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,15 +37,26 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        // Get jamaah role
+        $jamaahRole = Role::getByName('jamaah');
+
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'role_id' => $jamaahRole ? $jamaahRole->id : null,
+            'is_active' => true,
         ]);
 
         event(new Registered($user));
 
         Auth::login($user);
+
+        // Redirect based on role
+        if ($user->hasRole('jamaah')) {
+            // Jamaah needs to complete registration first
+            return redirect(route('jamaah.daftar', absolute: false));
+        }
 
         return redirect(route('dashboard', absolute: false));
     }

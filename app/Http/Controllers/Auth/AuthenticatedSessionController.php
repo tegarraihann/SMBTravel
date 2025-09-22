@@ -33,6 +33,30 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Update last login time
+        auth()->user()->update(['last_login_at' => now()]);
+
+        // Redirect based on user role and registration status
+        $user = auth()->user();
+
+        if ($user->hasRole('jamaah')) {
+            // Check if jamaah has completed registration
+            if (!$user->hasCompletedRegistration()) {
+                return redirect()->intended(route('jamaah.daftar', absolute: false));
+            }
+            return redirect()->intended(route('jamaah.dashboard', absolute: false));
+        } elseif ($user->hasRole('admin')) {
+            return redirect()->intended(route('admin.dashboard', absolute: false));
+        } elseif ($user->hasRole('marketing')) {
+            return redirect()->intended(route('marketing.dashboard', absolute: false));
+        } elseif ($user->hasRole('pimpinan')) {
+            return redirect()->intended(route('pimpinan.dashboard', absolute: false));
+        } elseif ($user->hasRole('cs')) {
+            return redirect()->intended(route('cs.dashboard', absolute: false));
+        } elseif ($user->hasRole('agent')) {
+            return redirect()->intended(route('agent.dashboard', absolute: false));
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
