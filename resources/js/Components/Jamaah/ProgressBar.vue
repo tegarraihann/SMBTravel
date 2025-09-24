@@ -24,16 +24,16 @@
           v-for="(step, index) in steps"
           :key="step.id"
           class="flex flex-col items-center"
-          :class="getStepClass(index + 1)"
+          :class="getStepClass(step.id)"
         >
           <!-- Step Circle -->
           <div
             class="w-10 h-10 rounded-full border-2 flex items-center justify-center bg-white transition-all duration-300"
-            :class="getCircleClass(index + 1)"
+            :class="getCircleClass(step.id)"
           >
             <!-- Check Icon for Completed -->
             <svg
-              v-if="index + 1 < currentStep"
+              v-if="step.id < currentStep"
               class="w-5 h-5 text-white"
               fill="currentColor"
               viewBox="0 0 20 20"
@@ -49,9 +49,9 @@
             <span
               v-else
               class="text-sm font-semibold"
-              :class="index + 1 === currentStep ? 'text-white' : 'text-gray-400'"
+              :class="step.id === currentStep ? 'text-white' : 'text-gray-400'"
             >
-              {{ index + 1 }}
+              {{ step.id === 4 ? 3 : (step.id === 5 ? 4 : step.id) }}
             </span>
           </div>
 
@@ -59,13 +59,13 @@
           <div class="mt-3 text-center">
             <p
               class="text-sm font-medium"
-              :class="index + 1 <= currentStep ? 'text-gray-900' : 'text-gray-400'"
+              :class="step.id <= currentStep ? 'text-gray-900' : 'text-gray-400'"
             >
               {{ step.title }}
             </p>
             <p
               class="text-xs mt-1"
-              :class="index + 1 <= currentStep ? 'text-gray-600' : 'text-gray-400'"
+              :class="step.id <= currentStep ? 'text-gray-600' : 'text-gray-400'"
             >
               {{ step.subtitle }}
             </p>
@@ -138,7 +138,7 @@ const props = defineProps({
 
 const emit = defineEmits(['step-action'])
 
-const totalSteps = 5
+const totalSteps = 4
 
 const steps = [
   {
@@ -152,12 +152,6 @@ const steps = [
     title: 'Pembayaran DP',
     subtitle: 'Down Payment',
     status: props.currentStep > 2 ? 'completed' : (props.currentStep === 2 ? 'current' : 'pending')
-  },
-  {
-    id: 3,
-    title: 'Konfirmasi',
-    subtitle: 'Verifikasi Admin',
-    status: props.currentStep > 3 ? 'completed' : (props.currentStep === 3 ? 'current' : 'pending')
   },
   {
     id: 4,
@@ -174,7 +168,10 @@ const steps = [
 ]
 
 const progressPercentage = computed(() => {
-  return ((props.currentStep - 1) / (totalSteps - 1)) * 100
+  // Map steps to visual progress: step 1=0%, step 2=33%, step 4=66%, step 5=100%
+  const stepMap = { 1: 0, 2: 1, 4: 2, 5: 3 }
+  const currentStepIndex = stepMap[props.currentStep] || 0
+  return (currentStepIndex / (totalSteps - 1)) * 100
 })
 
 const currentStepData = computed(() => {
@@ -203,17 +200,6 @@ const currentStepData = computed(() => {
           label: 'Lihat Detail Pembayaran',
           primary: false,
           handler: () => emit('step-action', 'view-payment-details')
-        }
-      ]
-    },
-    3: {
-      title: 'Menunggu Konfirmasi Admin',
-      description: 'Pembayaran Anda sedang diverifikasi oleh tim kami. Proses ini biasanya memakan waktu 1-2 hari kerja.',
-      actions: [
-        {
-          label: 'Hubungi Admin',
-          primary: false,
-          handler: () => emit('step-action', 'contact-admin')
         }
       ]
     },
@@ -253,18 +239,13 @@ const nextSteps = computed(() => {
   const nextStepsInfo = {
     1: [
       'Setelah mendaftar, lakukan pembayaran DP',
-      'Tunggu konfirmasi dari admin',
+      'Upload bukti pembayaran',
       'Siapkan dokumen yang diperlukan'
     ],
     2: [
       'Upload bukti pembayaran',
-      'Tunggu verifikasi admin (1-2 hari kerja)',
-      'Siapkan dokumen untuk persiapan'
-    ],
-    3: [
       'Siapkan dokumen: KTP, KK, Paspor',
-      'Ikuti sesi manasik umroh',
-      'Lunasi pembayaran (jika ada)'
+      'Persiapan untuk upload dokumen'
     ],
     4: [
       'Ikuti briefing keberangkatan',
@@ -277,16 +258,16 @@ const nextSteps = computed(() => {
   return nextStepsInfo[props.currentStep] || []
 })
 
-const getStepClass = (stepNumber) => {
+const getStepClass = (stepId) => {
   return {
-    'opacity-50': stepNumber > props.currentStep
+    'opacity-50': stepId > props.currentStep
   }
 }
 
-const getCircleClass = (stepNumber) => {
-  if (stepNumber < props.currentStep) {
+const getCircleClass = (stepId) => {
+  if (stepId < props.currentStep) {
     return 'border-blue-600 bg-blue-600'
-  } else if (stepNumber === props.currentStep) {
+  } else if (stepId === props.currentStep) {
     return 'border-blue-600 bg-blue-600'
   } else {
     return 'border-gray-300'

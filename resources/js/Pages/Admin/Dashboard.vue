@@ -1,7 +1,7 @@
 <template>
   <Head title="Admin Dashboard" />
 
-  <AuthenticatedLayout>
+  <AdminLayout>
     <template #header>
       <h2 class="font-semibold text-xl text-gray-800 leading-tight">
         Admin Dashboard
@@ -113,6 +113,12 @@
                       </svg>
                       Manage Packages
                     </Link>
+                    <Link :href="route('admin.payment.review')" class="flex items-center p-3 text-orange-600 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors">
+                      <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"/>
+                      </svg>
+                      Review Pembayaran
+                    </Link>
                     <Link :href="route('admin.reports.index')" class="flex items-center p-3 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
                       <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/>
@@ -140,13 +146,13 @@
         </div>
       </div>
     </div>
-  </AuthenticatedLayout>
+  </AdminLayout>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import AdminLayout from '@/Layouts/AdminLayout.vue'
 
 // Mock data - replace with real data from backend
 const totalUsers = ref(1247)

@@ -1,345 +1,430 @@
 <template>
-  <Head title="Daftar Jamaah" />
+    <Head title="Daftar Jamaah" />
 
-  <div class="min-h-screen bg-slate-50 py-12">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-      <!-- Header -->
-      <div class="text-center mb-8">
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">
-          Daftar Sebagai Jamaah
-        </h1>
-        <p class="text-lg text-gray-600">
-          Isi form pendaftaran di bawah untuk bergabung dengan program umroh kami
-        </p>
-      </div>
-
-      <!-- Progress Bar -->
-      <ProgressBar
-        :current-step="1"
-        :jamaah-data="{}"
-        @step-action="handleStepAction"
-      />
-
-      <!-- Registration Form -->
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <form @submit.prevent="submitForm" class="p-8 space-y-8">
-          <!-- Personal Information -->
-          <div class="space-y-6">
-            <div class="border-b border-gray-200 pb-4">
-              <h2 class="text-xl font-semibold text-gray-900">Data Pribadi</h2>
-              <p class="text-sm text-gray-500 mt-1">Informasi dasar tentang diri Anda</p>
+    <div class="min-h-screen bg-slate-50 py-12">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                    Formulir Pendaftaran Jamaah Umroh
+                </h1>
+                <p class="text-lg text-gray-600">
+                    Silakan lengkapi data di bawah ini dengan benar dan lengkap
+                </p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label for="nama_lengkap" class="block text-sm font-medium text-gray-700 mb-2">
-                  Nama Lengkap <span class="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="nama_lengkap"
-                  v-model="form.nama_lengkap"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Masukkan nama lengkap sesuai KTP"
-                >
-                <div v-if="errors.nama_lengkap" class="text-red-500 text-sm mt-1">
-                  {{ errors.nama_lengkap }}
+            <!-- Progress Bar -->
+            <ProgressBar :current-step="1" :jamaah-data="{}" @step-action="handleStepAction" />
+
+            <!-- Registration Form -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <form @submit.prevent="submitForm" class="p-8 space-y-8">
+
+                    <!-- Data Jamaah -->
+                    <div class="space-y-6">
+                        <div class="border-b border-gray-200 pb-4">
+                            <h2 class="text-xl font-semibold text-gray-900">Data Jamaah</h2>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Nama Lengkap Bin/Binti <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" v-model="form.nama_lengkap_bin_binti" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Nama lengkap sesuai identitas">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    NIK <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" v-model="form.nik" required maxlength="16"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="16 digit NIK">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Tempat Lahir <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" v-model="form.tempat_lahir" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Kota tempat lahir">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Tanggal Lahir <span class="text-red-500">*</span>
+                                </label>
+                                <input type="date" v-model="form.tanggal_lahir" @change="calculateAge" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Usia <span class="text-red-500">*</span>
+                                </label>
+                                <input type="number" v-model="form.usia" readonly
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                                    placeholder="Akan terisi otomatis">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Jenis Kelamin <span class="text-red-500">*</span>
+                                </label>
+                                <select v-model="form.jenis_kelamin" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Pilih jenis kelamin</option>
+                                    <option value="L">Laki-laki</option>
+                                    <option value="P">Perempuan</option>
+                                </select>
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Alamat <span class="text-red-500">*</span>
+                                </label>
+                                <textarea v-model="form.alamat" required rows="3"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Alamat lengkap sesuai identitas"></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    No. Telp/HP/WA <span class="text-red-500">*</span>
+                                </label>
+                                <input type="tel" v-model="form.no_telepon" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="08xxxxxxxxxx">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Pekerjaan <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" v-model="form.pekerjaan" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Pekerjaan saat ini">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Nama Marketing Umroh
+                                </label>
+                                <input type="text" v-model="form.nama_marketing"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Nama marketing yang menangani">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Paket Umroh Yang Diambil <span class="text-red-500">*</span>
+                                </label>
+                                <select v-model="form.paket_id" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <option value="">Pilih paket umroh</option>
+                                    <option value="1">City Tour Malaysia - Rp 24.5 Juta</option>
+                                    <option value="2">Plus Tha'if - Rp 34.5 Juta</option>
+                                    <option value="3">Plus Tha'if dan Kereta Cepat - Rp 41 Juta</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Rencana Keberangkatan
+                                </label>
+                                <input type="date" v-model="form.rencana_keberangkatan"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Program Talangan -->
+                    <div class="space-y-6">
+                        <div class="border-b border-gray-200 pb-4">
+                            <h2 class="text-xl font-semibold text-gray-900">Program Talangan</h2>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Program Talangan
+                            </label>
+                            <div class="space-y-2">
+                                <label class="flex items-center">
+                                    <input type="radio" v-model="form.program_talangan" :value="false" class="mr-2">
+                                    Tidak
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" v-model="form.program_talangan" :value="true" class="mr-2">
+                                    Ya
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Tabel Cicilan (jika program talangan = ya) -->
+                        <div v-if="form.program_talangan" class="mt-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Tabel Cicilan</h3>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full border border-gray-300">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-4 py-2 border-b text-left">No</th>
+                                            <th class="px-4 py-2 border-b text-left">DP</th>
+                                            <th class="px-4 py-2 border-b text-left">Tenor</th>
+                                            <th class="px-4 py-2 border-b text-left">Cicilan Perbulan</th>
+                                            <th class="px-4 py-2 border-b text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="(cicilan, index) in form.cicilan_data" :key="index" class="border-b">
+                                            <td class="px-4 py-2">{{ index + 1 }}</td>
+                                            <td class="px-4 py-2">
+                                                <input type="number" v-model="cicilan.dp" placeholder="Jumlah DP"
+                                                    class="w-full px-2 py-1 border border-gray-300 rounded">
+                                            </td>
+                                            <td class="px-4 py-2">
+                                                <input type="number" v-model="cicilan.tenor" placeholder="Bulan"
+                                                    class="w-full px-2 py-1 border border-gray-300 rounded">
+                                            </td>
+                                            <td class="px-4 py-2">
+                                                <input type="number" v-model="cicilan.cicilan_perbulan" placeholder="Per bulan"
+                                                    class="w-full px-2 py-1 border border-gray-300 rounded">
+                                            </td>
+                                            <td class="px-4 py-2 text-center">
+                                                <button type="button" @click="removeCicilan(index)"
+                                                    class="text-red-600 hover:text-red-800">
+                                                    Hapus
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <button type="button" @click="addCicilan" v-if="form.cicilan_data.length < 5"
+                                    class="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                    Tambah Cicilan
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sistem Pembayaran -->
+                    <div class="space-y-6">
+                        <div class="border-b border-gray-200 pb-4">
+                            <h2 class="text-xl font-semibold text-gray-900">Sistem Pembayaran</h2>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Sistem Pembayaran
+                                </label>
+                                <input type="text" v-model="form.sistem_pembayaran" readonly
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    DP
+                                </label>
+                                <input type="number" v-model="form.dp_paid" placeholder="Jumlah DP"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    TGL Pelunasan
+                                </label>
+                                <input type="date" v-model="form.tgl_pelunasan"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Jumlah Jamaah yang Berangkat -->
+                    <div class="space-y-6">
+                        <div class="border-b border-gray-200 pb-4">
+                            <h2 class="text-xl font-semibold text-gray-900">Jumlah Jamaah yang Berangkat</h2>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full border border-gray-300">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-2 border-b text-left">No</th>
+                                        <th class="px-4 py-2 border-b text-left">Nama Lengkap</th>
+                                        <th class="px-4 py-2 border-b text-left">NIK</th>
+                                        <th class="px-4 py-2 border-b text-left">Tempat/Tanggal Lahir</th>
+                                        <th class="px-4 py-2 border-b text-left">Jenis Kelamin</th>
+                                        <th class="px-4 py-2 border-b text-left">Alamat</th>
+                                        <th class="px-4 py-2 border-b text-left">No. Telp/WA</th>
+                                        <th class="px-4 py-2 border-b text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(jamaah, index) in form.jamaah_rombongan" :key="index" class="border-b">
+                                        <td class="px-4 py-2">{{ index + 1 }}</td>
+                                        <td class="px-4 py-2">
+                                            <input type="text" v-model="jamaah.nama" placeholder="Nama lengkap"
+                                                class="w-full px-2 py-1 border border-gray-300 rounded">
+                                        </td>
+                                        <td class="px-4 py-2">
+                                            <input type="text" v-model="jamaah.nik" placeholder="NIK" maxlength="16"
+                                                class="w-full px-2 py-1 border border-gray-300 rounded">
+                                        </td>
+                                        <td class="px-4 py-2">
+                                            <input type="text" v-model="jamaah.tempat_tanggal_lahir" placeholder="Tempat, DD/MM/YYYY"
+                                                class="w-full px-2 py-1 border border-gray-300 rounded">
+                                        </td>
+                                        <td class="px-4 py-2">
+                                            <select v-model="jamaah.jenis_kelamin" class="w-full px-2 py-1 border border-gray-300 rounded">
+                                                <option value="">Pilih</option>
+                                                <option value="L">L</option>
+                                                <option value="P">P</option>
+                                            </select>
+                                        </td>
+                                        <td class="px-4 py-2">
+                                            <input type="text" v-model="jamaah.alamat" placeholder="Alamat"
+                                                class="w-full px-2 py-1 border border-gray-300 rounded">
+                                        </td>
+                                        <td class="px-4 py-2">
+                                            <input type="text" v-model="jamaah.no_telp" placeholder="No. Telp"
+                                                class="w-full px-2 py-1 border border-gray-300 rounded">
+                                        </td>
+                                        <td class="px-4 py-2 text-center">
+                                            <button type="button" @click="removeJamaah(index)"
+                                                class="text-red-600 hover:text-red-800">
+                                                Hapus
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <button type="button" @click="addJamaah"
+                                class="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                                Tambah Jamaah
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Informasi Tambahan -->
+                    <div class="space-y-6">
+                        <div class="border-b border-gray-200 pb-4">
+                            <h2 class="text-xl font-semibold text-gray-900">Informasi Tambahan</h2>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Sumber info MMB diperoleh dari
+                                </label>
+                                <input type="text" v-model="form.sumber_info_mmb"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Dari mana Anda mengetahui layanan kami">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Kelengkapan Dokumen Umroh
+                                </label>
+                                <textarea v-model="form.kelengkapan_dokumen" rows="3"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Daftar dokumen yang sudah disiapkan"></textarea>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        a. Tanggal Diterima
+                                    </label>
+                                    <input type="date" v-model="form.tanggal_diterima_perlengkapan"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        b. Detail yang diterima
+                                    </label>
+                                    <input type="text" v-model="form.detail_perlengkapan_diterima"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Detail perlengkapan">
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        c. PIC Penerima
+                                    </label>
+                                    <input type="text" v-model="form.pic_penerima"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder="Nama PIC penerima">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Request Khusus dari jamaah
+                                </label>
+                                <textarea v-model="form.request_khusus" rows="3"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Permintaan khusus, alergi makanan, kondisi kesehatan, dll."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Terms and Submit -->
+                    <div class="space-y-6">
+                        <div class="flex items-start">
+                            <input type="checkbox" id="setuju" v-model="form.setuju" required
+                                class="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                            <label for="setuju" class="ml-2 text-sm text-gray-700">
+                                Saya setuju dengan <a href="#" class="text-blue-600 hover:text-blue-800">syarat dan
+                                    ketentuan</a>
+                                yang berlaku dan menyatakan bahwa data yang saya berikan adalah benar dan dapat
+                                dipertanggungjawabkan.
+                                <span class="text-red-500">*</span>
+                            </label>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row gap-4 pt-6">
+                            <button type="button" @click="resetForm"
+                                class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors duration-200">
+                                Reset Form
+                            </button>
+                            <button type="submit" :disabled="loading"
+                                class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200">
+                                <span v-if="loading">Memproses...</span>
+                                <span v-else>Daftar Sekarang</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Help Section -->
+            <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-blue-900 mb-2">Butuh Bantuan?</h3>
+                <p class="text-blue-700 mb-4">
+                    Tim customer service kami siap membantu Anda dalam proses pendaftaran.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <a href="https://wa.me/6281234567890" target="_blank"
+                        class="bg-yellow-500 hover:bg-yellow-600 text-slate-900 px-4 py-2 rounded-lg font-medium transition-colors duration-200 text-center">
+                        Chat WhatsApp
+                    </a>
+                    <a href="tel:0761-12345"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 text-center">
+                        Telepon Langsung
+                    </a>
                 </div>
-              </div>
-
-              <div>
-                <label for="jenis_kelamin" class="block text-sm font-medium text-gray-700 mb-2">
-                  Jenis Kelamin <span class="text-red-500">*</span>
-                </label>
-                <select
-                  id="jenis_kelamin"
-                  v-model="form.jenis_kelamin"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Pilih jenis kelamin</option>
-                  <option value="L">Laki-laki</option>
-                  <option value="P">Perempuan</option>
-                </select>
-                <div v-if="errors.jenis_kelamin" class="text-red-500 text-sm mt-1">
-                  {{ errors.jenis_kelamin }}
-                </div>
-              </div>
-
-              <div>
-                <label for="tempat_lahir" class="block text-sm font-medium text-gray-700 mb-2">
-                  Tempat Lahir <span class="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="tempat_lahir"
-                  v-model="form.tempat_lahir"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Kota tempat lahir"
-                >
-                <div v-if="errors.tempat_lahir" class="text-red-500 text-sm mt-1">
-                  {{ errors.tempat_lahir }}
-                </div>
-              </div>
-
-              <div>
-                <label for="tanggal_lahir" class="block text-sm font-medium text-gray-700 mb-2">
-                  Tanggal Lahir <span class="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  id="tanggal_lahir"
-                  v-model="form.tanggal_lahir"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                <div v-if="errors.tanggal_lahir" class="text-red-500 text-sm mt-1">
-                  {{ errors.tanggal_lahir }}
-                </div>
-              </div>
-
-              <div>
-                <label for="no_ktp" class="block text-sm font-medium text-gray-700 mb-2">
-                  Nomor KTP <span class="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="no_ktp"
-                  v-model="form.no_ktp"
-                  required
-                  maxlength="16"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="16 digit nomor KTP"
-                >
-                <div v-if="errors.no_ktp" class="text-red-500 text-sm mt-1">
-                  {{ errors.no_ktp }}
-                </div>
-              </div>
-
-              <div>
-                <label for="pekerjaan" class="block text-sm font-medium text-gray-700 mb-2">
-                  Pekerjaan <span class="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="pekerjaan"
-                  v-model="form.pekerjaan"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Pekerjaan saat ini"
-                >
-                <div v-if="errors.pekerjaan" class="text-red-500 text-sm mt-1">
-                  {{ errors.pekerjaan }}
-                </div>
-              </div>
             </div>
-
-            <div>
-              <label for="alamat" class="block text-sm font-medium text-gray-700 mb-2">
-                Alamat Lengkap <span class="text-red-500">*</span>
-              </label>
-              <textarea
-                id="alamat"
-                v-model="form.alamat"
-                required
-                rows="3"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Alamat lengkap sesuai KTP"
-              ></textarea>
-              <div v-if="errors.alamat" class="text-red-500 text-sm mt-1">
-                {{ errors.alamat }}
-              </div>
-            </div>
-          </div>
-
-          <!-- Contact Information -->
-          <div class="space-y-6">
-            <div class="border-b border-gray-200 pb-4">
-              <h2 class="text-xl font-semibold text-gray-900">Informasi Kontak</h2>
-              <p class="text-sm text-gray-500 mt-1">Cara kami menghubungi Anda</p>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                  Email <span class="text-red-500">*</span>
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  v-model="form.email"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="email@contoh.com"
-                >
-                <div v-if="errors.email" class="text-red-500 text-sm mt-1">
-                  {{ errors.email }}
-                </div>
-              </div>
-
-              <div>
-                <label for="no_telepon" class="block text-sm font-medium text-gray-700 mb-2">
-                  Nomor Telepon <span class="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  id="no_telepon"
-                  v-model="form.no_telepon"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="08xxxxxxxxxx"
-                >
-                <div v-if="errors.no_telepon" class="text-red-500 text-sm mt-1">
-                  {{ errors.no_telepon }}
-                </div>
-              </div>
-
-              <div>
-                <label for="no_darurat" class="block text-sm font-medium text-gray-700 mb-2">
-                  Kontak Darurat
-                </label>
-                <input
-                  type="tel"
-                  id="no_darurat"
-                  v-model="form.no_darurat"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Nomor keluarga yang bisa dihubungi"
-                >
-              </div>
-
-              <div>
-                <label for="hubungan_darurat" class="block text-sm font-medium text-gray-700 mb-2">
-                  Hubungan Kontak Darurat
-                </label>
-                <select
-                  id="hubungan_darurat"
-                  v-model="form.hubungan_darurat"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Pilih hubungan</option>
-                  <option value="Orang Tua">Orang Tua</option>
-                  <option value="Saudara">Saudara</option>
-                  <option value="Pasangan">Pasangan</option>
-                  <option value="Anak">Anak</option>
-                  <option value="Kerabat">Kerabat</option>
-                  <option value="Teman">Teman</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- Package Selection -->
-          <div class="space-y-6">
-            <div class="border-b border-gray-200 pb-4">
-              <h2 class="text-xl font-semibold text-gray-900">Pilihan Paket</h2>
-              <p class="text-sm text-gray-500 mt-1">Pilih paket umroh yang Anda inginkan</p>
-            </div>
-
-            <div>
-              <label for="paket_id" class="block text-sm font-medium text-gray-700 mb-2">
-                Paket Umroh <span class="text-red-500">*</span>
-              </label>
-              <select
-                id="paket_id"
-                v-model="form.paket_id"
-                required
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Pilih paket umroh</option>
-                <option value="1">City Tour Malaysia - Rp 24.5 Juta</option>
-                <option value="2">Plus Tha'if - Rp 34.5 Juta</option>
-                <option value="3">Plus Tha'if dan Kereta Cepat - Rp 41 Juta</option>
-              </select>
-              <div v-if="errors.paket_id" class="text-red-500 text-sm mt-1">
-                {{ errors.paket_id }}
-              </div>
-            </div>
-
-            <div>
-              <label for="catatan" class="block text-sm font-medium text-gray-700 mb-2">
-                Catatan Khusus
-              </label>
-              <textarea
-                id="catatan"
-                v-model="form.catatan"
-                rows="3"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Permintaan khusus, alergi makanan, kondisi kesehatan, dll."
-              ></textarea>
-            </div>
-          </div>
-
-          <!-- Terms and Submit -->
-          <div class="space-y-6">
-            <div class="flex items-start">
-              <input
-                type="checkbox"
-                id="setuju"
-                v-model="form.setuju"
-                required
-                class="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              >
-              <label for="setuju" class="ml-2 text-sm text-gray-700">
-                Saya setuju dengan <a href="#" class="text-blue-600 hover:text-blue-800">syarat dan ketentuan</a>
-                yang berlaku dan menyatakan bahwa data yang saya berikan adalah benar dan dapat dipertanggungjawabkan.
-                <span class="text-red-500">*</span>
-              </label>
-            </div>
-            <div v-if="errors.setuju" class="text-red-500 text-sm">
-              {{ errors.setuju }}
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-4 pt-6">
-              <button
-                type="button"
-                @click="resetForm"
-                class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
-              >
-                Reset Form
-              </button>
-              <button
-                type="submit"
-                :disabled="loading"
-                class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
-              >
-                <span v-if="loading">Memproses...</span>
-                <span v-else>Daftar Sekarang</span>
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-
-      <!-- Help Section -->
-      <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h3 class="text-lg font-semibold text-blue-900 mb-2">Butuh Bantuan?</h3>
-        <p class="text-blue-700 mb-4">
-          Tim customer service kami siap membantu Anda dalam proses pendaftaran.
-        </p>
-        <div class="flex flex-col sm:flex-row gap-3">
-          <a
-            href="https://wa.me/6281234567890"
-            target="_blank"
-            class="bg-yellow-500 hover:bg-yellow-600 text-slate-900 px-4 py-2 rounded-lg font-medium transition-colors duration-200 text-center"
-          >
-            Chat WhatsApp
-          </a>
-          <a
-            href="tel:0761-12345"
-            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 text-center"
-          >
-            Telepon Langsung
-          </a>
         </div>
-      </div>
     </div>
-  </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, watch } from 'vue'
 import { Head, router } from '@inertiajs/vue3'
 import ProgressBar from '@/Components/Jamaah/ProgressBar.vue'
 
@@ -347,140 +432,161 @@ const loading = ref(false)
 const errors = ref({})
 
 const form = reactive({
-  nama_lengkap: '',
-  jenis_kelamin: '',
-  tempat_lahir: '',
-  tanggal_lahir: '',
-  no_ktp: '',
-  pekerjaan: '',
-  alamat: '',
-  email: '',
-  no_telepon: '',
-  no_darurat: '',
-  hubungan_darurat: '',
-  paket_id: '',
-  catatan: '',
-  setuju: false
+    nama_lengkap_bin_binti: '',
+    nik: '',
+    tempat_lahir: '',
+    tanggal_lahir: '',
+    usia: '',
+    jenis_kelamin: '',
+    alamat: '',
+    no_telepon: '',
+    pekerjaan: '',
+    nama_marketing: '',
+    paket_id: '',
+    rencana_keberangkatan: '',
+    program_talangan: false,
+    cicilan_data: [],
+    sistem_pembayaran: 'Transfer',
+    dp_paid: '',
+    tgl_pelunasan: '',
+    jamaah_rombongan: [
+        {
+            nama: '',
+            nik: '',
+            tempat_tanggal_lahir: '',
+            jenis_kelamin: '',
+            alamat: '',
+            no_telp: ''
+        }
+    ],
+    sumber_info_mmb: '',
+    kelengkapan_dokumen: '',
+    tanggal_diterima_perlengkapan: '',
+    detail_perlengkapan_diterima: '',
+    pic_penerima: '',
+    request_khusus: '',
+    setuju: false
+})
+
+// Calculate age based on birth date
+const calculateAge = () => {
+    if (form.tanggal_lahir) {
+        const birthDate = new Date(form.tanggal_lahir)
+        const today = new Date()
+        let age = today.getFullYear() - birthDate.getFullYear()
+        const monthDiff = today.getMonth() - birthDate.getMonth()
+
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--
+        }
+
+        form.usia = age
+    }
+}
+
+// Cicilan methods
+const addCicilan = () => {
+    if (form.cicilan_data.length < 5) {
+        form.cicilan_data.push({
+            dp: '',
+            tenor: '',
+            cicilan_perbulan: ''
+        })
+    }
+}
+
+const removeCicilan = (index) => {
+    form.cicilan_data.splice(index, 1)
+}
+
+// Jamaah rombongan methods
+const addJamaah = () => {
+    form.jamaah_rombongan.push({
+        nama: '',
+        nik: '',
+        tempat_tanggal_lahir: '',
+        jenis_kelamin: '',
+        alamat: '',
+        no_telp: ''
+    })
+}
+
+const removeJamaah = (index) => {
+    if (form.jamaah_rombongan.length > 1) {
+        form.jamaah_rombongan.splice(index, 1)
+    }
+}
+
+// Watch program talangan to reset cicilan data
+watch(() => form.program_talangan, (newVal) => {
+    if (!newVal) {
+        form.cicilan_data = []
+    } else if (form.cicilan_data.length === 0) {
+        addCicilan()
+    }
 })
 
 const submitForm = async () => {
-  try {
-    loading.value = true
-    errors.value = {}
+    try {
+        loading.value = true
+        errors.value = {}
 
-    // Validasi form
-    if (!validateForm()) {
-      loading.value = false
-      return
+        // Filter out empty jamaah_rombongan entries
+        const formData = { ...form }
+        formData.jamaah_rombongan = form.jamaah_rombongan.filter(jamaah => {
+            return jamaah.nama.trim() !== '' ||
+                   jamaah.nik.trim() !== '' ||
+                   jamaah.tempat_tanggal_lahir.trim() !== '' ||
+                   jamaah.jenis_kelamin.trim() !== '' ||
+                   jamaah.alamat.trim() !== '' ||
+                   jamaah.no_telp.trim() !== ''
+        })
+
+        // Submit ke backend
+        router.post('/jamaah/daftar', formData, {
+            onSuccess: () => {
+                alert('Pendaftaran berhasil! Anda akan diarahkan ke dashboard.')
+                router.visit('/jamaah/dashboard')
+            },
+            onError: (err) => {
+                errors.value = err
+                console.error('Validation errors:', err)
+            }
+        })
+
+    } catch (error) {
+        console.error('Error submitting form:', error)
+        alert('Terjadi kesalahan. Silakan coba lagi.')
+    } finally {
+        loading.value = false
     }
-
-    // Simulasi pengiriman data (ganti dengan router.post untuk integrasi Laravel)
-    await new Promise(resolve => setTimeout(resolve, 2000))
-
-    // router.post('/jamaah/daftar', form, {
-    //   onSuccess: () => {
-    //     alert('Pendaftaran berhasil! Tim kami akan menghubungi Anda segera.')
-    //     resetForm()
-    //   },
-    //   onError: (err) => {
-    //     errors.value = err
-    //   }
-    // })
-
-    // Submit ke backend untuk menyimpan data jamaah
-    router.post('/jamaah/daftar', form, {
-      onSuccess: () => {
-        alert('Pendaftaran berhasil! Anda akan diarahkan ke dashboard.')
-        router.visit('/jamaah/dashboard')
-      },
-      onError: (err) => {
-        errors.value = err
-      }
-    })
-
-  } catch (error) {
-    console.error('Error submitting form:', error)
-    alert('Terjadi kesalahan. Silakan coba lagi.')
-  } finally {
-    loading.value = false
-  }
-}
-
-const validateForm = () => {
-  const newErrors = {}
-
-  if (!form.nama_lengkap.trim()) {
-    newErrors.nama_lengkap = 'Nama lengkap harus diisi'
-  }
-
-  if (!form.jenis_kelamin) {
-    newErrors.jenis_kelamin = 'Jenis kelamin harus dipilih'
-  }
-
-  if (!form.tempat_lahir.trim()) {
-    newErrors.tempat_lahir = 'Tempat lahir harus diisi'
-  }
-
-  if (!form.tanggal_lahir) {
-    newErrors.tanggal_lahir = 'Tanggal lahir harus diisi'
-  }
-
-  if (!form.no_ktp.trim() || form.no_ktp.length !== 16) {
-    newErrors.no_ktp = 'Nomor KTP harus 16 digit'
-  }
-
-  if (!form.pekerjaan.trim()) {
-    newErrors.pekerjaan = 'Pekerjaan harus diisi'
-  }
-
-  if (!form.alamat.trim()) {
-    newErrors.alamat = 'Alamat harus diisi'
-  }
-
-  if (!form.email.trim() || !isValidEmail(form.email)) {
-    newErrors.email = 'Email harus valid'
-  }
-
-  if (!form.no_telepon.trim()) {
-    newErrors.no_telepon = 'Nomor telepon harus diisi'
-  }
-
-  if (!form.paket_id) {
-    newErrors.paket_id = 'Paket umroh harus dipilih'
-  }
-
-  if (!form.setuju) {
-    newErrors.setuju = 'Anda harus menyetujui syarat dan ketentuan'
-  }
-
-  errors.value = newErrors
-  return Object.keys(newErrors).length === 0
-}
-
-const isValidEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email)
 }
 
 const resetForm = () => {
-  Object.keys(form).forEach(key => {
-    if (typeof form[key] === 'boolean') {
-      form[key] = false
-    } else {
-      form[key] = ''
-    }
-  })
-  errors.value = {}
+    Object.keys(form).forEach(key => {
+        if (key === 'program_talangan' || key === 'setuju') {
+            form[key] = false
+        } else if (key === 'sistem_pembayaran') {
+            form[key] = 'Transfer'
+        } else if (key === 'cicilan_data') {
+            form[key] = []
+        } else if (key === 'jamaah_rombongan') {
+            form[key] = [{
+                nama: '',
+                nik: '',
+                tempat_tanggal_lahir: '',
+                jenis_kelamin: '',
+                alamat: '',
+                no_telp: ''
+            }]
+        } else {
+            form[key] = ''
+        }
+    })
+    errors.value = {}
 }
 
 const handleStepAction = (action) => {
-  switch (action) {
-    case 'continue-registration':
-      // Focus on first input field
-      document.getElementById('nama_lengkap')?.focus()
-      break
-    default:
-      console.log('Step action:', action)
-  }
+    console.log('Step action:', action)
 }
 </script>

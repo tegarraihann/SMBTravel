@@ -9,6 +9,7 @@ import { Head, Link, useForm } from '@inertiajs/vue3';
 const form = useForm({
     name: '',
     email: '',
+    no_telp: '',
     password: '',
     password_confirmation: '',
 });
@@ -68,7 +69,7 @@ const submit = () => {
                     autocomplete="username"
                 />
 
-                <InputError class="mt-2" :message="form.errors.email" />
+                <InputError class="mt-2" :message="form.errors.no_telp" />
             </div>
 
             <div class="mt-4">

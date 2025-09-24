@@ -1,7 +1,7 @@
 <template>
   <Head title="Customer Service Dashboard" />
 
-  <AuthenticatedLayout>
+  <CSLayout>
     <template #header>
       <h2 class="font-semibold text-xl text-gray-800 leading-tight">
         Customer Service Dashboard
@@ -116,13 +116,13 @@
         </div>
       </div>
     </div>
-  </AuthenticatedLayout>
+  </CSLayout>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { Head, Link } from '@inertiajs/vue3'
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import CSLayout from '@/Layouts/CSLayout.vue'
 
 // Mock data - replace with real data from backend
 const openTickets = ref(23)

@@ -50,7 +50,13 @@
 
                         <!-- Payment Info -->
                         <div class="bg-white rounded-lg border border-gray-200 p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Informasi Pembayaran</h3>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900">Informasi Pembayaran</h3>
+                                <div v-if="jamaah.program_talangan" class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                    Program Talangan
+                                </div>
+                            </div>
+
                             <div class="space-y-4">
                                 <div class="flex justify-between items-center">
                                     <span class="text-gray-600">Total Paket</span>
@@ -62,62 +68,178 @@
                                         Rp {{ formatPrice(jamaah.dp_paid || selectedPackage.dp) }}
                                     </span>
                                 </div>
+
+                                <!-- Show installment info if program talangan -->
+                                <div v-if="jamaah.program_talangan" class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span class="text-blue-700 font-medium">Pembayaran Cicilan</span>
+                                        <Link :href="route('jamaah.installments')"
+                                            class="text-blue-600 hover:text-blue-800 font-medium">
+                                            Lihat Detail →
+                                        </Link>
+                                    </div>
+                                    <p class="text-blue-600 text-xs mt-1">
+                                        Sisa pembayaran akan dibagi menjadi 5 cicilan bulanan
+                                    </p>
+                                </div>
+
                                 <div class="border-t pt-4">
                                     <div class="flex justify-between items-center">
                                         <span class="text-gray-600">Sisa Pembayaran</span>
-                                        <span class="font-bold text-red-600">
-                                            Rp {{ formatPrice(selectedPackage.price - (jamaah.dp_paid ||
-                                            selectedPackage.dp)) }}
+                                        <span class="font-bold" :class="jamaah.program_talangan ? 'text-blue-600' : 'text-red-600'">
+                                            Rp {{ formatPrice(selectedPackage.price - (jamaah.dp_paid || selectedPackage.dp)) }}
                                         </span>
                                     </div>
+                                    <p v-if="jamaah.program_talangan" class="text-xs text-gray-500 mt-1">
+                                        Akan dibayar dengan sistem cicilan
+                                    </p>
                                 </div>
                             </div>
 
                             <!-- Payment Actions -->
-                            <div v-if="jamaah.current_step === 2" class="mt-6 pt-6 border-t">
+                            <div v-if="jamaah.current_step === 2" class="mt-6 pt-6 border-t space-y-3">
                                 <button @click="showPaymentModal = true"
                                     class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
                                     Bayar DP Sekarang
                                 </button>
+
+                                <!-- Show installment info notice -->
+                                <div v-if="jamaah.program_talangan" class="text-center">
+                                    <p class="text-xs text-gray-500">
+                                        Setelah DP disetujui, jadwal cicilan akan dibuat otomatis
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Installment Quick Access -->
+                            <div v-if="jamaah.program_talangan && jamaah.current_step > 2" class="mt-6 pt-6 border-t">
+                                <Link :href="route('jamaah.installments')"
+                                    class="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 inline-block text-center">
+                                    Kelola Pembayaran Cicilan
+                                </Link>
                             </div>
                         </div>
 
                         <!-- Documents -->
                         <div v-if="jamaah.current_step >= 4" class="bg-white rounded-lg border border-gray-200 p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Dokumen</h3>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900">Dokumen Persyaratan</h3>
+                                <Link :href="route('jamaah.dokumen')"
+                                    class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                    Kelola Semua →
+                                </Link>
+                            </div>
+
                             <div class="space-y-3">
-                                <div v-for="doc in documents" :key="doc.name"
+                                <div v-for="(doc, key) in requiredDocuments" :key="key"
                                     class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                                     <div class="flex items-center space-x-3">
-                                        <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                            <svg class="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd"
+                                        <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                                            :class="isDocumentUploaded(key) ? 'bg-green-100' : 'bg-gray-100'">
+                                            <svg class="w-4 h-4" :class="isDocumentUploaded(key) ? 'text-green-600' : 'text-gray-400'"
+                                                fill="currentColor" viewBox="0 0 20 20">
+                                                <path v-if="isDocumentUploaded(key)" fill-rule="evenodd"
+                                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                    clip-rule="evenodd"/>
+                                                <path v-else fill-rule="evenodd"
                                                     d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
-                                                    clip-rule="evenodd" />
+                                                    clip-rule="evenodd"/>
                                             </svg>
                                         </div>
                                         <div>
-                                            <p class="font-medium text-gray-900">{{ doc.name }}</p>
-                                            <p class="text-sm text-gray-500">{{ doc.description }}</p>
+                                            <p class="font-medium text-gray-900">{{ doc }}</p>
+                                            <p class="text-sm text-gray-500">
+                                                {{ getDocumentDescription(key) }}
+                                            </p>
                                         </div>
                                     </div>
                                     <div class="flex items-center space-x-2">
                                         <span class="px-2 py-1 text-xs rounded-full"
-                                            :class="doc.status === 'uploaded' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'">
-                                            {{ doc.status === 'uploaded' ? 'Sudah Upload' : 'Belum Upload' }}
+                                            :class="isDocumentUploaded(key) ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'">
+                                            {{ isDocumentUploaded(key) ? 'Sudah Upload' : 'Belum Upload' }}
                                         </span>
-                                        <button v-if="doc.status !== 'uploaded'"
+                                        <button @click="openDocumentUpload(key)"
+                                            v-if="!isDocumentUploaded(key)"
                                             class="text-blue-600 hover:text-blue-800 text-sm font-medium">
                                             Upload
                                         </button>
+                                        <button @click="viewDocument(key)"
+                                            v-else
+                                            class="text-green-600 hover:text-green-800 text-sm font-medium">
+                                            Lihat
+                                        </button>
                                     </div>
                                 </div>
+                            </div>
+
+                            <div class="mt-4 pt-4 border-t">
+                                <Link :href="route('jamaah.dokumen')"
+                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 inline-block text-center">
+                                    Upload Semua Dokumen
+                                </Link>
                             </div>
                         </div>
                     </div>
 
                     <!-- Right Column -->
                     <div class="space-y-6">
+                        <!-- Installment Summary -->
+                        <div v-if="jamaah.program_talangan && jamaah.current_step > 2" class="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900">Cicilan Anda</h3>
+                                <Link :href="route('jamaah.installments')"
+                                    class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                    Lihat Semua →
+                                </Link>
+                            </div>
+
+                            <div class="space-y-4">
+                                <!-- Payment Progress -->
+                                <div>
+                                    <div class="flex justify-between text-sm mb-2">
+                                        <span class="text-gray-600">Progress Pembayaran</span>
+                                        <span class="font-medium text-blue-600">75%</span>
+                                    </div>
+                                    <div class="w-full bg-white rounded-full h-2 border">
+                                        <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full" style="width: 75%"></div>
+                                    </div>
+                                    <p class="text-xs text-gray-500 mt-1">3 dari 5 cicilan telah dibayar</p>
+                                </div>
+
+                                <!-- Next Payment -->
+                                <div class="bg-white rounded-lg p-4 border border-blue-200">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm font-medium text-gray-900">Cicilan Berikutnya</p>
+                                            <p class="text-xs text-gray-500">Jatuh tempo 15 Nov 2025</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-lg font-bold text-blue-600">Rp 4.3 Juta</p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <Link :href="route('jamaah.installments')"
+                                            class="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-3 rounded-md transition-colors duration-200 inline-block text-center">
+                                            Bayar Sekarang
+                                        </Link>
+                                    </div>
+                                </div>
+
+                                <!-- Overdue Alert -->
+                                <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+                                    <div class="flex items-start">
+                                        <svg class="h-4 w-4 text-red-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                        </svg>
+                                        <div class="ml-2">
+                                            <p class="text-sm font-medium text-red-800">1 Pembayaran Terlambat</p>
+                                            <p class="text-xs text-red-600">Segera lakukan pembayaran untuk menghindari denda</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Contact Info -->
                         <div class="bg-white rounded-lg border border-gray-200 p-6">
                             <h3 class="text-lg font-semibold text-gray-900 mb-4">Butuh Bantuan?</h3>
@@ -220,7 +342,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { Head, Link } from '@inertiajs/vue3'
+import { Head, Link, router } from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import ProgressBar from '@/Components/Jamaah/ProgressBar.vue'
 
@@ -243,28 +365,20 @@ const selectedPackage = {
     image: 'https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
 }
 
-const documents = ref([
-    {
-        name: 'KTP',
-        description: 'Kartu Tanda Penduduk',
-        status: 'pending'
-    },
-    {
-        name: 'Kartu Keluarga',
-        description: 'Kartu Keluarga asli',
-        status: 'pending'
-    },
-    {
-        name: 'Paspor',
-        description: 'Paspor dengan masa berlaku minimal 6 bulan',
-        status: 'pending'
-    },
-    {
-        name: 'Foto 4x6',
-        description: 'Foto berwarna latar belakang putih',
-        status: 'pending'
-    }
-])
+// Document configuration
+const requiredDocuments = ref({
+    foto_ktp: 'Foto KTP',
+    foto_kk: 'Foto Kartu Keluarga',
+    foto_paspor: 'Foto Paspor',
+    foto_diri: 'Foto 4x6'
+})
+
+const documentDescriptions = {
+    foto_ktp: 'Kartu Tanda Penduduk yang masih berlaku',
+    foto_kk: 'Kartu Keluarga asli',
+    foto_paspor: 'Paspor dengan masa berlaku minimal 6 bulan',
+    foto_diri: 'Foto berwarna latar belakang putih ukuran 4x6'
+}
 
 const timeline = ref([
     {
@@ -304,11 +418,14 @@ const handleStepAction = (action) => {
         case 'view-payment-details':
             // Navigate to payment details
             break
+        case 'view-installments':
+            router.visit(route('jamaah.installments'))
+            break
         case 'upload-documents':
-            // Navigate to document upload
+            router.visit(route('jamaah.dokumen'))
             break
         case 'view-manasik-schedule':
-            // Navigate to manasik schedule
+            router.visit(route('jamaah.manasik'))
             break
         case 'view-itinerary':
             // Navigate to itinerary
@@ -317,8 +434,53 @@ const handleStepAction = (action) => {
 }
 
 const submitPayment = () => {
-    // Handle payment submission
-    alert('Bukti pembayaran berhasil diupload. Tim kami akan memverifikasi dalam 1-2 hari kerja.')
-    showPaymentModal.value = false
+    // Get file input
+    const fileInput = document.querySelector('input[type="file"]')
+    const file = fileInput.files[0]
+
+    if (!file) {
+        alert('Silakan pilih file bukti pembayaran terlebih dahulu')
+        return
+    }
+
+    // Create form data
+    const formData = new FormData()
+    formData.append('bukti_transfer', file)
+
+    // Submit to backend
+    router.post(route('jamaah.pembayaran.upload'), formData, {
+        onSuccess: (response) => {
+            showPaymentModal.value = false
+            // Refresh page to show updated step
+            window.location.reload()
+        },
+        onError: (errors) => {
+            console.error('Upload error:', errors)
+            alert('Gagal upload bukti pembayaran. Silakan coba lagi.')
+        }
+    })
 }
+
+// Document methods
+const isDocumentUploaded = (documentKey) => {
+    return jamaahData.value && jamaahData.value[documentKey]
+}
+
+const getDocumentDescription = (documentKey) => {
+    return documentDescriptions[documentKey] || ''
+}
+
+const openDocumentUpload = (documentKey) => {
+    // Redirect to specific document upload or open modal
+    window.location.href = route('jamaah.dokumen') + '#' + documentKey
+}
+
+const viewDocument = (documentKey) => {
+    if (jamaahData.value && jamaahData.value[documentKey]) {
+        window.open('/storage/' + jamaahData.value[documentKey], '_blank')
+    }
+}
+
+// Get jamaah data from props for document checking
+const jamaahData = computed(() => props.jamaah)
 </script>
