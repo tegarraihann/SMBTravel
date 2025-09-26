@@ -24,14 +24,16 @@ class UserSeeder extends Seeder
         }
 
         // Create admin user
-        $adminUser = User::create([
-            'name' => 'Administrator',
-            'email' => 'admin@travelumroh.com',
-            'password' => Hash::make('admin123'),
-            'role_id' => $adminRole->id,
-            'is_active' => true,
-            'email_verified_at' => now(),
-        ]);
+        $adminUser = User::updateOrCreate(
+            ['email' => 'admin@travelumroh.com'],
+            [
+                'name' => 'Administrator',
+                'password' => Hash::make('admin123'),
+                'role_id' => $adminRole->id,
+                'is_active' => true,
+                'email_verified_at' => now(),
+            ]
+        );
 
         $this->command->info('Admin user created successfully:');
         $this->command->info('Email: admin@travelumroh.com');
@@ -41,14 +43,16 @@ class UserSeeder extends Seeder
         $superAdminRole = Role::where('name', 'admin')->first();
 
         if ($superAdminRole) {
-            User::create([
-                'name' => 'Super Admin',
-                'email' => 'superadmin@travelumroh.com',
-                'password' => Hash::make('superadmin123'),
-                'role_id' => $superAdminRole->id,
-                'is_active' => true,
-                'email_verified_at' => now(),
-            ]);
+            User::updateOrCreate(
+                ['email' => 'superadmin@travelumroh.com'],
+                [
+                    'name' => 'Super Admin',
+                    'password' => Hash::make('superadmin123'),
+                    'role_id' => $superAdminRole->id,
+                    'is_active' => true,
+                    'email_verified_at' => now(),
+                ]
+            );
 
             $this->command->info('Super Admin user created successfully:');
             $this->command->info('Email: superadmin@travelumroh.com');
@@ -59,14 +63,16 @@ class UserSeeder extends Seeder
         $marketingRole = Role::where('name', 'marketing')->first();
 
         if ($marketingRole) {
-            User::create([
-                'name' => 'Marketing User',
-                'email' => 'marketing@travelumroh.com',
-                'password' => Hash::make('marketing123'),
-                'role_id' => $marketingRole->id,
-                'is_active' => true,
-                'email_verified_at' => now(),
-            ]);
+            User::updateOrCreate(
+                ['email' => 'marketing@travelumroh.com'],
+                [
+                    'name' => 'Marketing User',
+                    'password' => Hash::make('marketing123'),
+                    'role_id' => $marketingRole->id,
+                    'is_active' => true,
+                    'email_verified_at' => now(),
+                ]
+            );
 
             $this->command->info('Marketing user created successfully:');
             $this->command->info('Email: marketing@travelumroh.com');
@@ -77,14 +83,16 @@ class UserSeeder extends Seeder
         $csRole = Role::where('name', 'cs')->first();
 
         if ($csRole) {
-            User::create([
-                'name' => 'Customer Service',
-                'email' => 'cs@travelumroh.com',
-                'password' => Hash::make('cs123'),
-                'role_id' => $csRole->id,
-                'is_active' => true,
-                'email_verified_at' => now(),
-            ]);
+            User::updateOrCreate(
+                ['email' => 'cs@travelumroh.com'],
+                [
+                    'name' => 'Customer Service',
+                    'password' => Hash::make('cs123'),
+                    'role_id' => $csRole->id,
+                    'is_active' => true,
+                    'email_verified_at' => now(),
+                ]
+            );
 
             $this->command->info('CS user created successfully:');
             $this->command->info('Email: cs@travelumroh.com');
@@ -95,14 +103,16 @@ class UserSeeder extends Seeder
         $agentRole = Role::where('name', 'agent')->first();
 
         if ($agentRole) {
-            User::create([
-                'name' => 'Travel Agent',
-                'email' => 'agent@travelumroh.com',
-                'password' => Hash::make('agent123'),
-                'role_id' => $agentRole->id,
-                'is_active' => true,
-                'email_verified_at' => now(),
-            ]);
+            User::updateOrCreate(
+                ['email' => 'agent@travelumroh.com'],
+                [
+                    'name' => 'Travel Agent',
+                    'password' => Hash::make('agent123'),
+                    'role_id' => $agentRole->id,
+                    'is_active' => true,
+                    'email_verified_at' => now(),
+                ]
+            );
 
             $this->command->info('Agent user created successfully:');
             $this->command->info('Email: agent@travelumroh.com');
@@ -113,14 +123,16 @@ class UserSeeder extends Seeder
         $pimpinanRole = Role::where('name', 'pimpinan')->first();
 
         if ($pimpinanRole) {
-            User::create([
-                'name' => 'Pimpinan',
-                'email' => 'pimpinan@travelumroh.com',
-                'password' => Hash::make('pimpinan123'),
-                'role_id' => $pimpinanRole->id,
-                'is_active' => true,
-                'email_verified_at' => now(),
-            ]);
+            User::updateOrCreate(
+                ['email' => 'pimpinan@travelumroh.com'],
+                [
+                    'name' => 'Pimpinan',
+                    'password' => Hash::make('pimpinan123'),
+                    'role_id' => $pimpinanRole->id,
+                    'is_active' => true,
+                    'email_verified_at' => now(),
+                ]
+            );
 
             $this->command->info('Pimpinan user created successfully:');
             $this->command->info('Email: pimpinan@travelumroh.com');
@@ -131,18 +143,52 @@ class UserSeeder extends Seeder
         $jamaahRole = Role::where('name', 'jamaah')->first();
 
         if ($jamaahRole) {
-            User::create([
-                'name' => 'Jamaah Test',
-                'email' => 'jamaah@test.com',
-                'password' => Hash::make('jamaah123'),
-                'role_id' => $jamaahRole->id,
-                'is_active' => true,
-                'email_verified_at' => now(),
-            ]);
+            User::updateOrCreate(
+                ['email' => 'jamaah@test.com'],
+                [
+                    'name' => 'Jamaah Test',
+                    'password' => Hash::make('jamaah123'),
+                    'role_id' => $jamaahRole->id,
+                    'is_active' => true,
+                    'email_verified_at' => now(),
+                ]
+            );
 
             $this->command->info('Test Jamaah user created successfully:');
             $this->command->info('Email: jamaah@test.com');
             $this->command->info('Password: jamaah123');
+        }
+
+        // Create operasional users
+        $operasionalRole = Role::where('name', 'operasional')->first();
+
+        if ($operasionalRole) {
+            $operasionalUsers = [
+                [
+                    'name' => 'Ahmad Operasional',
+                    'email' => 'operasional1@travelumroh.com',
+                    'password' => Hash::make('operasional123'),
+                    'phone' => '6281234567890',
+                ]
+            ];
+
+            foreach ($operasionalUsers as $userData) {
+                User::updateOrCreate(
+                    ['email' => $userData['email']],
+                    array_merge($userData, [
+                        'role_id' => $operasionalRole->id,
+                        'is_active' => true,
+                        'email_verified_at' => now(),
+                    ])
+                );
+            }
+
+            $this->command->info('Operasional users created successfully:');
+            $this->command->info('Email: operasional1@travelumroh.com | Password: operasional123');
+            $this->command->info('Email: operasional2@travelumroh.com | Password: operasional123');
+            $this->command->info('Email: operasional3@travelumroh.com | Password: operasional123');
+            $this->command->line('⚠️  PENTING: Ganti password default setelah login pertama!');
+            $this->command->line('📱 WhatsApp: Pastikan nomor phone di database sudah benar untuk notifikasi');
         }
     }
 }

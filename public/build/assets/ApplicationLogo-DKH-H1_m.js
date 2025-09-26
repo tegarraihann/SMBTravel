@@ -1,0 +1,1 @@
+import{_ as e}from"./_plugin-vue_export-helper-DlAUqK2U.js";import{c as s,o as t,b as a}from"./app-Cbx_-bua.js";const c={},n={class:"flex items-center"};function r(l,o){return t(),s("div",n,[...o[0]||(o[0]=[a("img",{src:"/images/logo/logo-smb.png",alt:"PT. Sahabat Menuju Baitullah",class:"h-20 w-auto"},null,-1)])])}const _=e(c,[["render",r]]);export{_ as A};

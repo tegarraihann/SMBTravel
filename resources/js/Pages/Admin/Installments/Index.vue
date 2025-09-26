@@ -201,39 +201,46 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span :class="getStatusClass(installment.status)" class="inline-flex px-2 py-1 text-xs font-semibold rounded-full">
-                                            {{ getStatusText(installment.status) }}
+                                        <span :class="getStatusClass(installment)" class="inline-flex px-2 py-1 text-xs font-semibold rounded-full">
+                                            {{ getStatusText(installment) }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div class="flex space-x-2">
                                             <button
-                                                v-if="installment.status === 'paid'"
+                                                v-if="installment.status === 'paid' && !installment.approved_at"
                                                 @click="approvePayment(installment)"
-                                                class="text-green-600 hover:text-green-900"
+                                                class="text-green-600 hover:text-green-900 text-xs px-2 py-1 border border-green-600 rounded hover:bg-green-50"
                                             >
                                                 Setujui
                                             </button>
                                             <button
-                                                v-if="installment.status === 'paid'"
+                                                v-if="installment.status === 'paid' && !installment.approved_at"
                                                 @click="showRejectModal(installment)"
-                                                class="text-red-600 hover:text-red-900"
+                                                class="text-red-600 hover:text-red-900 text-xs px-2 py-1 border border-red-600 rounded hover:bg-red-50"
                                             >
                                                 Tolak
+
                                             </button>
+                                            <span
+                                                v-if="installment.status === 'paid' && installment.approved_at"
+                                                class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded"
+                                            >
+                                                Disetujui
+                                            </span>
                                             <button
                                                 v-if="installment.status !== 'paid' && installment.status !== 'waived'"
                                                 @click="showWaiveModal(installment)"
-                                                class="text-blue-600 hover:text-blue-900"
+                                                class="text-blue-600 hover:text-blue-900 text-xs px-2 py-1 border border-blue-600 rounded hover:bg-blue-50"
                                             >
                                                 Bebaskan
                                             </button>
                                             <button
                                                 v-if="installment.payment_proof"
-                                                @click="downloadProof(installment.id)"
-                                                class="text-purple-600 hover:text-purple-900"
+                                                @click="showProofModal(installment)"
+                                                class="text-purple-600 hover:text-purple-900 text-xs px-2 py-1 border border-purple-600 rounded hover:bg-purple-50"
                                             >
-                                                Bukti
+                                                Lihat Bukti
                                             </button>
                                         </div>
                                     </td>
@@ -368,6 +375,110 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Payment Proof Modal -->
+                <div v-if="showProofModalFlag && selectedInstallment" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                    <div class="relative top-10 mx-auto p-5 border max-w-2xl shadow-lg rounded-md bg-white">
+                        <div class="mt-3">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-medium text-gray-900">
+                                    Bukti Pembayaran Cicilan
+                                </h3>
+                                <button
+                                    @click="closeProofModal"
+                                    class="text-gray-400 hover:text-gray-600"
+                                >
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <!-- Installment Info -->
+                            <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                                <div class="grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <span class="font-medium text-gray-700">Jamaah:</span>
+                                        <span class="text-gray-900">{{ selectedInstallment.jamaah_profile?.nama_lengkap_bin_binti }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-gray-700">Cicilan:</span>
+                                        <span class="text-gray-900">ke-{{ selectedInstallment.installment_number }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-gray-700">Jumlah:</span>
+                                        <span class="text-gray-900">Rp {{ formatCurrency(selectedInstallment.amount) }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-gray-700">Jatuh Tempo:</span>
+                                        <span class="text-gray-900">{{ formatDate(selectedInstallment.due_date) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Payment Proof Image -->
+                            <div class="mb-4">
+                                <h4 class="text-sm font-medium text-gray-700 mb-2">Bukti Transfer:</h4>
+                                <div class="border rounded-lg overflow-hidden">
+                                    <img
+                                        :src="`/storage/${selectedInstallment.payment_proof}`"
+                                        :alt="`Bukti pembayaran cicilan ${selectedInstallment.installment_number}`"
+                                        class="w-full max-h-96 object-contain bg-gray-100"
+                                        @error="$event.target.src='/images/no-image.png'"
+                                    >
+                                </div>
+                            </div>
+
+                            <!-- Payment Notes -->
+                            <div v-if="selectedInstallment.notes" class="mb-4">
+                                <h4 class="text-sm font-medium text-gray-700 mb-2">Catatan Pembayaran:</h4>
+                                <p class="text-sm text-gray-600 bg-gray-50 p-3 rounded">{{ selectedInstallment.notes }}</p>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="flex justify-between items-center">
+                                <button
+                                    @click="downloadProof(selectedInstallment.id)"
+                                    class="flex items-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
+                                >
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                    Download
+                                </button>
+
+                                <div class="flex space-x-2">
+                                    <button
+                                        v-if="selectedInstallment.status === 'paid' && !selectedInstallment.approved_at"
+                                        @click="showRejectModal(selectedInstallment); closeProofModal()"
+                                        class="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100"
+                                    >
+                                        Tolak
+                                    </button>
+                                    <button
+                                        v-if="selectedInstallment.status === 'paid' && !selectedInstallment.approved_at"
+                                        @click="approvePayment(selectedInstallment); closeProofModal()"
+                                        class="px-4 py-2 text-sm font-medium text-green-600 bg-green-50 rounded-md hover:bg-green-100"
+                                    >
+                                        Setujui
+                                    </button>
+                                    <span
+                                        v-if="selectedInstallment.status === 'paid' && selectedInstallment.approved_at"
+                                        class="px-4 py-2 text-sm font-medium text-green-700 bg-green-100 rounded-md"
+                                    >
+                                        ✅ Sudah Disetujui
+                                    </span>
+                                    <button
+                                        @click="closeProofModal"
+                                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                                    >
+                                        Tutup
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </AdminLayout>
@@ -375,7 +486,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { router } from '@inertiajs/vue3'
+import { router, usePage } from '@inertiajs/vue3'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 
 const props = defineProps({
@@ -384,9 +495,23 @@ const props = defineProps({
     filters: Object
 })
 
+// Handle flash messages
+const { $page } = usePage()
+
+// Show flash messages on component mount
+onMounted(() => {
+    if ($page.props.flash.success) {
+        alert('✅ ' + $page.props.flash.success)
+    }
+    if ($page.props.flash.error) {
+        alert('❌ ' + $page.props.flash.error)
+    }
+})
+
 const loading = ref(false)
 const showRejectModalFlag = ref(false)
 const showWaiveModalFlag = ref(false)
+const showProofModalFlag = ref(false)
 const selectedInstallment = ref(null)
 const searchTimeout = ref(null)
 
@@ -416,20 +541,30 @@ const formatDate = (date) => {
     })
 }
 
-const getStatusClass = (status) => {
+const getStatusClass = (installment) => {
+    const status = installment.status
+
+    if (status === 'paid') {
+        return installment.approved_at ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
+    }
+
     const classes = {
         'pending': 'bg-yellow-100 text-yellow-800',
-        'paid': 'bg-green-100 text-green-800',
         'overdue': 'bg-red-100 text-red-800',
         'waived': 'bg-gray-100 text-gray-600'
     }
     return classes[status] || 'bg-gray-100 text-gray-600'
 }
 
-const getStatusText = (status) => {
+const getStatusText = (installment) => {
+    const status = installment.status
+
+    if (status === 'paid') {
+        return installment.approved_at ? 'Disetujui' : 'Menunggu Persetujuan'
+    }
+
     const texts = {
         'pending': 'Menunggu',
-        'paid': 'Sudah Dibayar',
         'overdue': 'Terlambat',
         'waived': 'Dibebaskan'
     }
@@ -474,7 +609,11 @@ const resetFilters = () => {
 const approvePayment = (installment) => {
     if (confirm('Apakah Anda yakin ingin menyetujui pembayaran ini?')) {
         loading.value = true
-        router.post(`/admin/installments/${installment.id}/approve`, {}, {
+        router.post(route('admin.installments.approve', installment.id), {}, {
+            onError: (errors) => {
+                console.error('Approve payment error:', errors)
+                alert('❌ Gagal menyetujui pembayaran: ' + (errors.message || 'Unknown error'))
+            },
             onFinish: () => {
                 loading.value = false
             }
@@ -498,11 +637,15 @@ const rejectPayment = () => {
     if (!selectedInstallment.value) return
 
     loading.value = true
-    router.post(`/admin/installments/${selectedInstallment.value.id}/reject`, {
+    router.post(route('admin.installments.reject', selectedInstallment.value.id), {
         reason: rejectForm.reason
     }, {
         onSuccess: () => {
             closeRejectModal()
+        },
+        onError: (errors) => {
+            console.error('Reject payment error:', errors)
+            alert('❌ Gagal menolak pembayaran: ' + (errors.message || 'Unknown error'))
         },
         onFinish: () => {
             loading.value = false
@@ -526,11 +669,15 @@ const waivePayment = () => {
     if (!selectedInstallment.value) return
 
     loading.value = true
-    router.post(`/admin/installments/${selectedInstallment.value.id}/waive`, {
+    router.post(route('admin.installments.waive', selectedInstallment.value.id), {
         reason: waiveForm.reason
     }, {
         onSuccess: () => {
             closeWaiveModal()
+        },
+        onError: (errors) => {
+            console.error('Waive payment error:', errors)
+            alert('❌ Gagal membebaskan pembayaran: ' + (errors.message || 'Unknown error'))
         },
         onFinish: () => {
             loading.value = false
@@ -538,7 +685,17 @@ const waivePayment = () => {
     })
 }
 
+const showProofModal = (installment) => {
+    selectedInstallment.value = installment
+    showProofModalFlag.value = true
+}
+
+const closeProofModal = () => {
+    showProofModalFlag.value = false
+    selectedInstallment.value = null
+}
+
 const downloadProof = (installmentId) => {
-    window.open(`/admin/installments/${installmentId}/download`, '_blank')
+    window.open(route('admin.installments.download', installmentId), '_blank')
 }
 </script>

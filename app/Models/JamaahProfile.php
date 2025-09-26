@@ -21,7 +21,10 @@ class JamaahProfile extends Model
         'no_darurat',
         'hubungan_darurat',
         'nama_marketing',
+        'marketing_id',
+        'agent_id',
         'paket_id',
+        'umroh_schedule_id',
         'rencana_keberangkatan',
         'program_talangan',
         'cicilan_data',
@@ -29,6 +32,7 @@ class JamaahProfile extends Model
         'current_step',
         'status',
         'dp_paid',
+        'dp_amount_paid',
         'sistem_pembayaran',
         'tgl_pelunasan',
         'jamaah_rombongan',
@@ -52,7 +56,26 @@ class JamaahProfile extends Model
         'documents_verified',
         'documents_uploaded_at',
         'document_notes',
-        'registration_completed_at'
+        'registration_completed_at',
+        // Payment fields baru
+        'payment_type',
+        'remaining_amount',
+        'is_full_payment_upfront',
+        'pelunasan_amount_paid',
+        'bukti_pelunasan',
+        'pelunasan_paid_at',
+        'pelunasan_approved_by_admin',
+        // Ticket & Visa fields
+        'ticket_status',
+        'ticket_processed_by',
+        'ticket_processed_at',
+        'ticket_notes',
+        'ticket_file',
+        'visa_status',
+        'visa_processed_by',
+        'visa_processed_at',
+        'visa_notes',
+        'visa_file'
     ];
 
     protected $casts = [
@@ -61,6 +84,7 @@ class JamaahProfile extends Model
         'tgl_pelunasan' => 'date',
         'tanggal_diterima_perlengkapan' => 'date',
         'dp_paid' => 'decimal:2',
+        'dp_amount_paid' => 'decimal:2',
         'program_talangan' => 'boolean',
         'data_approved_by_cs' => 'boolean',
         'payment_approved_by_admin' => 'boolean',
@@ -70,12 +94,51 @@ class JamaahProfile extends Model
         'cs_approval_at' => 'datetime',
         'admin_approval_at' => 'datetime',
         'documents_uploaded_at' => 'datetime',
-        'registration_completed_at' => 'datetime'
+        'registration_completed_at' => 'datetime',
+        // Payment fields casts
+        'remaining_amount' => 'decimal:2',
+        'is_full_payment_upfront' => 'boolean',
+        'pelunasan_amount_paid' => 'decimal:2',
+        'pelunasan_paid_at' => 'datetime',
+        'pelunasan_approved_by_admin' => 'boolean',
+        // Ticket & Visa casts
+        'ticket_processed_at' => 'datetime',
+        'visa_processed_at' => 'datetime'
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function umrohPackage(): BelongsTo
+    {
+        return $this->belongsTo(UmrohPackage::class, 'paket_id');
+    }
+
+    public function umrohSchedule(): BelongsTo
+    {
+        return $this->belongsTo(UmrohSchedule::class, 'umroh_schedule_id');
+    }
+
+    public function marketing(): BelongsTo
+    {
+        return $this->belongsTo(Marketing::class, 'marketing_id');
+    }
+
+    public function agent(): BelongsTo
+    {
+        return $this->belongsTo(MarketingAgent::class, 'agent_id');
+    }
+
+    public function ticketProcessor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'ticket_processed_by');
+    }
+
+    public function visaProcessor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'visa_processed_by');
     }
 
     public function installmentPayments()
@@ -93,16 +156,17 @@ class JamaahProfile extends Model
         if (!$this->isRegistrationComplete()) {
             return 1; // Still in registration phase
         }
+
         return $this->current_step;
     }
 
     public function getStepName(): string
     {
         $steps = [
-            1 => 'Pendaftaran Data Diri',
+            1 => 'Pendaftaran & Dokumen',
             2 => 'Pembayaran DP',
-            4 => 'Upload Dokumen',
-            5 => 'Manasik & Keberangkatan'
+            3 => 'Pelunasan & Manasik',
+            4 => 'Keberangkatan'
         ];
 
         return $steps[$this->getCurrentStep()] ?? 'Unknown';
@@ -112,12 +176,12 @@ class JamaahProfile extends Model
     {
         switch ($this->current_step) {
             case 1:
-                return 'Menunggu input data';
+                return 'Menunggu input data & dokumen';
             case 2:
                 return 'Menunggu pembayaran DP';
+            case 3:
+                return 'Proses pelunasan & manasik';
             case 4:
-                return 'Upload dokumen';
-            case 5:
                 return 'Siap keberangkatan';
             default:
                 return 'Status tidak diketahui';
@@ -130,14 +194,14 @@ class JamaahProfile extends Model
 
         switch ($currentStep) {
             case 1:
-                // Otomatis lanjut ke step 2 setelah submit data
+                // Lanjut ke step 2 setelah submit data
                 return true;
             case 2:
-                // Otomatis lanjut ke step 4 setelah upload bukti transfer (skip step 3)
+                // Lanjut ke step 3 setelah upload bukti transfer
                 return !is_null($this->bukti_transfer);
-            case 4:
-                // Lanjut ke step 5 jika dokumen sudah diverifikasi
-                return $this->documents_verified ?? false;
+            case 3:
+                // Lanjut ke step 4 jika payment complete dan dokumen sudah diverifikasi
+                return $this->isPaymentComplete() && $this->documents_verified;
             default:
                 return false;
         }
@@ -149,34 +213,30 @@ class JamaahProfile extends Model
             return false;
         }
 
-        // Skip step 3 (verification) - go directly from step 2 to step 4
-        if ($this->current_step == 2) {
-            $this->current_step = 4;
-        } else {
-            $this->current_step = min($this->current_step + 1, 5);
-        }
+        // Normal progression: 1 -> 2 -> 3 -> 4
+        $this->current_step = min($this->current_step + 1, 4);
 
         return $this->save();
     }
 
     public function isAwaitingCSApproval(): bool
     {
-        return $this->current_step == 3 && !$this->data_approved_by_cs;
+        return $this->current_step == 2 && $this->bukti_transfer && !$this->data_approved_by_cs;
     }
 
     public function isAwaitingAdminApproval(): bool
     {
-        return $this->current_step == 3 && !$this->payment_approved_by_admin;
+        return $this->current_step == 2 && $this->bukti_transfer && !$this->payment_approved_by_admin;
     }
 
     public function canCSApprove(): bool
     {
-        return $this->current_step >= 3 && !$this->data_approved_by_cs;
+        return $this->current_step >= 2 && !$this->data_approved_by_cs;
     }
 
     public function canAdminApprove(): bool
     {
-        return $this->current_step >= 3 && !$this->payment_approved_by_admin && !is_null($this->bukti_transfer);
+        return $this->current_step >= 2 && !$this->payment_approved_by_admin && !is_null($this->bukti_transfer);
     }
 
     public function hasAllRequiredDocuments(): bool
@@ -225,7 +285,7 @@ class JamaahProfile extends Model
 
     public function canUploadDocuments(): bool
     {
-        return $this->current_step >= 4;
+        return $this->current_step >= 1; // Documents can be uploaded from step 1
     }
 
     // ===== INSTALLMENT PAYMENT METHODS =====
@@ -319,9 +379,24 @@ class JamaahProfile extends Model
     public function isPaymentComplete(): bool
     {
         if (!$this->program_talangan) {
-            return $this->payment_approved_by_admin && $this->data_approved_by_cs;
+            // Untuk non-talangan: cek apakah DP = harga paket (lunas langsung) atau perlu pelunasan
+            $packageAmount = $this->getTotalPackageAmount();
+            $dpPaid = (float) $this->dp_amount_paid;
+
+            // Jika DP >= harga paket, maka lunas langsung (full payment)
+            if ($dpPaid >= $packageAmount) {
+                return $this->payment_approved_by_admin && $this->data_approved_by_cs;
+            }
+            // Jika DP < harga paket, perlu pelunasan juga
+            else {
+                return $this->payment_approved_by_admin &&
+                       $this->data_approved_by_cs &&
+                       $this->pelunasan_approved_by_admin &&
+                       ($this->pelunasan_amount_paid + $dpPaid) >= $packageAmount;
+            }
         }
 
+        // Untuk program talangan: cek installments
         return $this->installmentPayments()
             ->whereNotIn('status', ['paid', 'waived'])
             ->count() === 0;
@@ -376,17 +451,9 @@ class JamaahProfile extends Model
             return 1;
         }
 
-        // For program talangan, don't block on payment completion
-        // Only require DP to be approved to proceed
-        if ($this->program_talangan) {
-            if ($this->current_step == 2 && $this->payment_approved_by_admin && $this->data_approved_by_cs) {
-                return 4; // Skip to preparation step
-            }
-        } else {
-            // Regular payment flow
-            if ($this->current_step == 2 && $this->payment_approved_by_admin && $this->data_approved_by_cs) {
-                return 4;
-            }
+        // Normal flow: check if can advance based on approvals
+        if ($this->current_step == 2 && $this->payment_approved_by_admin && $this->data_approved_by_cs) {
+            return 3; // Move to step 3 (Pelunasan & Manasik)
         }
 
         return $this->current_step;
@@ -407,9 +474,56 @@ class JamaahProfile extends Model
      */
     private function getTotalPackageAmount(): float
     {
-        // TODO: Implement based on your package system
-        // This should get the total amount from the selected package
-        // For now, returning a default amount
+        if ($this->umrohPackage) {
+            return (float) $this->umrohPackage->harga;
+        }
+
+        // Fallback to default amount if no package found
         return 25000000; // 25 million IDR default
+    }
+
+    /**
+     * Set payment type and calculate remaining amount
+     */
+    public function setPaymentType(): void
+    {
+        $packageAmount = $this->getTotalPackageAmount();
+        $dpPaid = (float) $this->dp_amount_paid;
+
+        if ($dpPaid >= $packageAmount) {
+            // Full payment upfront
+            $this->payment_type = 'full_payment';
+            $this->is_full_payment_upfront = true;
+            $this->remaining_amount = 0;
+        } else {
+            // DP only, needs pelunasan
+            $this->payment_type = 'dp_only';
+            $this->is_full_payment_upfront = false;
+            $this->remaining_amount = $packageAmount - $dpPaid;
+        }
+    }
+
+    /**
+     * Check if needs pelunasan payment
+     */
+    public function needsPelunasan(): bool
+    {
+        return !$this->is_full_payment_upfront && $this->remaining_amount > 0;
+    }
+
+    /**
+     * Get payment progress percentage
+     */
+    public function getPaymentProgressPercentage(): float
+    {
+        if ($this->program_talangan) {
+            return $this->getPaymentProgress(); // Existing method for installments
+        }
+
+        $packageAmount = $this->getTotalPackageAmount();
+        if ($packageAmount <= 0) return 0;
+
+        $totalPaid = (float) $this->dp_amount_paid + (float) $this->pelunasan_amount_paid;
+        return min(($totalPaid / $packageAmount) * 100, 100);
     }
 }

@@ -13,14 +13,14 @@ use Illuminate\Support\Facades\DB;
 class InstallmentService
 {
     /**
-     * Generate installment schedule for a jamaah with program talangan
+     * Generate payment schedule for jamaah (installments or lump sum payment)
      */
     public function generateScheduleFromJamaah(JamaahProfile $jamaah): array
     {
-        if (!$jamaah->program_talangan || !$jamaah->rencana_keberangkatan) {
+        if (!$jamaah->rencana_keberangkatan) {
             return [
                 'success' => false,
-                'message' => 'Jamaah tidak menggunakan program talangan atau tanggal keberangkatan belum ditentukan'
+                'message' => 'Tanggal keberangkatan belum ditentukan'
             ];
         }
 
@@ -35,19 +35,31 @@ class InstallmentService
         try {
             DB::beginTransaction();
 
-            $result = $jamaah->generateInstallmentSchedule();
+            if ($jamaah->program_talangan) {
+                // Generate installments for program talangan
+                $result = $jamaah->generateInstallmentSchedule();
+                $message = 'Jadwal cicilan berhasil dibuat';
+                $paymentType = 'installment';
+            } else {
+                // Generate single lump sum payment for non-talangan
+                $result = $this->generateLumpSumPayment($jamaah);
+                $message = 'Jadwal pelunasan berhasil dibuat';
+                $paymentType = 'lump_sum';
+            }
 
             if ($result) {
                 DB::commit();
 
-                Log::info('Installment schedule generated for jamaah', [
+                Log::info('Payment schedule generated for jamaah', [
                     'jamaah_id' => $jamaah->id,
-                    'installments_count' => 5
+                    'payment_type' => $paymentType,
+                    'program_talangan' => $jamaah->program_talangan
                 ]);
 
                 return [
                     'success' => true,
-                    'message' => 'Jadwal cicilan berhasil dibuat',
+                    'message' => $message,
+                    'payment_type' => $paymentType,
                     'data' => $jamaah->installmentPayments()->orderBy('installment_number')->get()
                 ];
             }
@@ -70,6 +82,60 @@ class InstallmentService
                 'message' => 'Terjadi kesalahan saat membuat jadwal cicilan'
             ];
         }
+    }
+
+    /**
+     * Generate single lump sum payment for non-talangan jamaah
+     */
+    private function generateLumpSumPayment(JamaahProfile $jamaah): bool
+    {
+        // Calculate remaining balance from actual package price
+        $packagePrice = $jamaah->umrohPackage?->harga ?? 24500000; // Fallback to default if package not set
+        $biayaTambahan = $jamaah->umrohSchedule?->biaya_tambahan ?? 0;
+        $totalPrice = $packagePrice + $biayaTambahan;
+
+        $dpPaid = $jamaah->dp_amount_paid ?? $jamaah->dp_paid ?? 0;
+        $remainingBalance = $totalPrice - $dpPaid;
+
+        if ($remainingBalance <= 0) {
+            Log::info('No remaining balance for jamaah', [
+                'jamaah_id' => $jamaah->id,
+                'package_price' => $packagePrice,
+                'biaya_tambahan' => $biayaTambahan,
+                'total_price' => $totalPrice,
+                'dp_paid' => $dpPaid
+            ]);
+            return true; // Already fully paid
+        }
+
+        // Set due date 30 days before departure or minimum 14 days from now
+        $departureDate = Carbon::parse($jamaah->rencana_keberangkatan);
+        $dueDate = $departureDate->copy()->subDays(30);
+        $minimumDate = Carbon::now()->addDays(14);
+
+        if ($dueDate->lt($minimumDate)) {
+            $dueDate = $minimumDate;
+        }
+
+        // Create single installment payment record
+        $installment = InstallmentPayment::create([
+            'jamaah_profile_id' => $jamaah->id,
+            'installment_number' => 1,
+            'amount' => $remainingBalance,
+            'due_date' => $dueDate,
+            'status' => 'pending',
+            'payment_type' => 'lump_sum',
+            'description' => 'Pelunasan pembayaran paket umroh'
+        ]);
+
+        Log::info('Lump sum payment created for jamaah', [
+            'jamaah_id' => $jamaah->id,
+            'installment_id' => $installment->id,
+            'amount' => $remainingBalance,
+            'due_date' => $dueDate->format('Y-m-d')
+        ]);
+
+        return true;
     }
 
     /**
@@ -153,6 +219,9 @@ class InstallmentService
                 'jamaah_id' => $installment->jamaah_profile_id
             ]);
 
+            // Send notifications after successful approval
+            $this->sendApprovalNotifications($installment);
+
             return [
                 'success' => true,
                 'message' => 'Pembayaran cicilan berhasil disetujui',
@@ -169,6 +238,69 @@ class InstallmentService
                 'success' => false,
                 'message' => 'Gagal menyetujui pembayaran cicilan'
             ];
+        }
+    }
+
+    /**
+     * Send approval notifications (Email + WhatsApp + Database)
+     */
+    protected function sendApprovalNotifications(InstallmentPayment $installment): void
+    {
+        try {
+            $jamaah = $installment->jamaahProfile;
+            $user = $jamaah->user;
+
+            // Send email notification
+            if ($user->email) {
+                try {
+                    \Mail::to($user->email)->send(new \App\Mail\InstallmentApprovedMail($installment));
+                    Log::info('Approval email sent', [
+                        'installment_id' => $installment->id,
+                        'email' => $user->email
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to send approval email', [
+                        'installment_id' => $installment->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+
+            // Send database notification
+            try {
+                $notification = new \App\Notifications\InstallmentApprovedNotification($installment);
+                $user->notify($notification);
+
+                // Send WhatsApp message if phone number exists
+                if ($jamaah->no_telepon) {
+                    $whatsappService = new \App\Services\WhatsAppService();
+                    $whatsappMessage = $notification->getWhatsAppMessage();
+                    $whatsappResult = $whatsappService->sendMessage($jamaah->no_telepon, $whatsappMessage);
+
+                    Log::info('WhatsApp notification result', [
+                        'installment_id' => $installment->id,
+                        'phone' => $jamaah->no_telepon,
+                        'result' => $whatsappResult
+                    ]);
+                }
+
+                Log::info('Approval notifications sent', [
+                    'installment_id' => $installment->id,
+                    'jamaah_id' => $jamaah->id
+                ]);
+
+            } catch (\Exception $e) {
+                Log::error('Failed to send approval notification', [
+                    'installment_id' => $installment->id,
+                    'error' => $e->getMessage()
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Failed to send approval notifications', [
+                'installment_id' => $installment->id,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 

@@ -10,44 +10,9 @@
 
     <div class="py-12">
       <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-        <!-- Progress Indicator -->
-        <div class="mb-8">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center text-green-600">
-              <div class="flex items-center justify-center w-8 h-8 bg-green-600 rounded-full">
-                <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                </svg>
-              </div>
-              <span class="ml-2 text-sm font-medium">Data Diri</span>
-            </div>
-            <div class="flex-1 mx-4 h-1 bg-green-600"></div>
-            <div class="flex items-center text-green-600">
-              <div class="flex items-center justify-center w-8 h-8 bg-green-600 rounded-full">
-                <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                </svg>
-              </div>
-              <span class="ml-2 text-sm font-medium">Pembayaran</span>
-            </div>
-            <div class="flex-1 mx-4 h-1 bg-green-600"></div>
-            <div class="flex items-center text-green-600">
-              <div class="flex items-center justify-center w-8 h-8 bg-green-600 rounded-full">
-                <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                </svg>
-              </div>
-              <span class="ml-2 text-sm font-medium">Verifikasi</span>
-            </div>
-            <div class="flex-1 mx-4 h-1 bg-blue-600"></div>
-            <div class="flex items-center text-blue-600">
-              <div class="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-full">
-                <span class="text-white text-sm font-bold">4</span>
-              </div>
-              <span class="ml-2 text-sm font-medium">Upload Dokumen</span>
-            </div>
-          </div>
-        </div>
+        <!-- Progress Bar -->
+        <ProgressBar :current-step="jamaahData.current_step" :jamaah-data="jamaahData"
+                     @step-action="handleStepAction" @navigate-to-step="handleStepNavigation" />
 
         <!-- Access Check -->
         <div v-if="!jamaahData.can_upload_documents" class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
@@ -214,6 +179,7 @@ import { ref, computed } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
 import DocumentUploadField from '@/Components/DocumentUploadField.vue'
+import ProgressBar from '@/Components/Jamaah/ProgressBar.vue'
 
 const props = defineProps({
   jamaahData: {
@@ -303,6 +269,51 @@ const submitAllDocuments = async () => {
     alert('Gagal menyelesaikan upload dokumen')
   } finally {
     uploading.value = false
+  }
+}
+
+const handleStepAction = (action) => {
+  switch (action) {
+    case 'continue-registration':
+      router.visit(route('jamaah.daftar'))
+      break
+    case 'pay-dp':
+      router.visit(route('jamaah.pembayaran'))
+      break
+    case 'upload-documents':
+      // Stay on documents page
+      break
+    case 'view-manasik-schedule':
+      router.visit(route('jamaah.manasik'))
+      break
+    case 'check-verification-status':
+      // Stay on page to show verification status
+      break
+    default:
+      console.log('Step action:', action)
+      break
+  }
+}
+
+const handleStepNavigation = (stepId) => {
+  // Navigate to appropriate page for testing
+  console.log(`🧪 Testing navigation to step ${stepId}`)
+
+  switch (stepId) {
+    case 1:
+      router.visit(route('jamaah.daftar'))
+      break
+    case 2:
+      router.visit(route('jamaah.pembayaran'))
+      break
+    case 3:
+      router.visit(route('jamaah.installments'))
+      break
+    case 4:
+      router.visit(route('jamaah.dashboard'))
+      break
+    default:
+      break
   }
 }
 </script>

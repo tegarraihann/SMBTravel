@@ -2,14 +2,18 @@
     <AuthenticatedLayout>
         <div class="py-6">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+                <!-- Progress Bar -->
+                <ProgressBar :current-step="3" :jamaah-data="jamaahData"
+                             @step-action="handleStepAction" @navigate-to-step="handleStepNavigation" />
+
                 <!-- Header -->
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 border-b border-gray-200">
                         <h1 class="text-2xl font-bold text-gray-900">
-                            Pembayaran Cicilan Program Talangan
+                            {{ jamaahData?.program_talangan ? 'Pembayaran Cicilan Program Talangan' : 'Pelunasan Pembayaran Umroh' }}
                         </h1>
                         <p class="text-gray-600 mt-2">
-                            Kelola pembayaran cicilan Anda untuk program talangan umroh
+                            {{ jamaahData?.program_talangan ? 'Kelola pembayaran cicilan Anda untuk program talangan umroh' : 'Lakukan pelunasan sisa pembayaran paket umroh Anda' }}
                         </p>
                     </div>
                 </div>
@@ -292,6 +296,114 @@
                 </div>
             </div>
         </div>
+
+        <!-- Verification Status Modal -->
+        <div v-if="showVerificationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Status Verifikasi Dokumen & Pembayaran</h3>
+                        <button @click="showVerificationModal = false" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="space-y-6">
+                        <!-- Document Verification Status -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2" :class="jamaahData?.documents_verified ? 'text-green-500' : 'text-yellow-500'" fill="currentColor" viewBox="0 0 20 20">
+                                    <path v-if="jamaahData?.documents_verified" fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    <path v-else fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                                Status Dokumen
+                            </h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Dokumen Upload:</span>
+                                    <span class="px-2 py-1 text-xs rounded-full" :class="jamaahData?.documents_uploaded_at ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'">
+                                        {{ jamaahData?.documents_uploaded_at ? 'Sudah Upload' : 'Belum Upload' }}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Verifikasi CS:</span>
+                                    <span class="px-2 py-1 text-xs rounded-full" :class="jamaahData?.documents_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'">
+                                        {{ jamaahData?.documents_verified ? 'Terverifikasi' : 'Menunggu Verifikasi' }}
+                                    </span>
+                                </div>
+                                <p v-if="jamaahData?.documents_uploaded_at" class="text-xs text-gray-500">
+                                    Upload: {{ new Date(jamaahData.documents_uploaded_at).toLocaleDateString('id-ID') }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Payment Verification Status -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2" :class="jamaahData?.payment_approved_by_admin ? 'text-green-500' : 'text-yellow-500'" fill="currentColor" viewBox="0 0 20 20">
+                                    <path v-if="jamaahData?.payment_approved_by_admin" fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                                    <path v-else fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"/>
+                                </svg>
+                                Status Pembayaran DP
+                            </h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Bukti Transfer:</span>
+                                    <span class="px-2 py-1 text-xs rounded-full" :class="jamaahData?.bukti_transfer ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'">
+                                        {{ jamaahData?.bukti_transfer ? 'Sudah Upload' : 'Belum Upload' }}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Verifikasi Admin:</span>
+                                    <span class="px-2 py-1 text-xs rounded-full" :class="jamaahData?.payment_approved_by_admin ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'">
+                                        {{ jamaahData?.payment_approved_by_admin ? 'Disetujui' : 'Menunggu Verifikasi' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pelunasan Status -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2" :class="paymentData?.is_payment_complete ? 'text-green-500' : 'text-blue-500'" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                                </svg>
+                                Status Pelunasan
+                            </h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Progress Pembayaran:</span>
+                                    <span class="font-medium text-blue-600">{{ paymentData?.payment_progress || 0 }}%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+                                    <div class="bg-blue-600 h-2 rounded-full" :style="{ width: (paymentData?.payment_progress || 0) + '%' }"></div>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Status:</span>
+                                    <span class="px-2 py-1 text-xs rounded-full" :class="paymentData?.is_payment_complete ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'">
+                                        {{ paymentData?.is_payment_complete ? 'Lunas' : 'Belum Lunas' }}
+                                    </span>
+                                </div>
+                                <div v-if="paymentData?.total_outstanding" class="flex justify-between items-center">
+                                    <span class="text-gray-600">Sisa Pembayaran:</span>
+                                    <span class="font-medium text-red-600">
+                                        Rp {{ formatCurrency(paymentData.total_outstanding) }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex justify-end">
+                        <button @click="showVerificationModal = false" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            Tutup
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </AuthenticatedLayout>
 </template>
 
@@ -299,6 +411,7 @@
 import { ref, onMounted } from 'vue'
 import { usePage, router } from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import ProgressBar from '@/Components/Jamaah/ProgressBar.vue'
 
 const props = defineProps({
     paymentData: Object,
@@ -312,6 +425,58 @@ const selectedInstallment = ref(null)
 const paymentForm = ref({
     notes: ''
 })
+
+// ProgressBar handlers
+const handleStepAction = (action) => {
+    switch (action) {
+        case 'continue-registration':
+            router.visit(route('jamaah.daftar'))
+            break
+        case 'pay-dp':
+            router.visit(route('jamaah.pembayaran'))
+            break
+        case 'check-verification-status':
+            showVerificationStatus()
+            break
+        case 'pay-remaining-balance':
+            // Stay on current page (installments)
+            break
+        case 'view-manasik-schedule':
+            router.visit(route('jamaah.manasik'))
+            break
+        default:
+            console.log('Step action:', action)
+            break
+    }
+}
+
+const handleStepNavigation = (stepId) => {
+    console.log(`🧪 Testing navigation to step ${stepId}`)
+
+    switch (stepId) {
+        case 1:
+            router.visit(route('jamaah.daftar'))
+            break
+        case 2:
+            router.visit(route('jamaah.pembayaran'))
+            break
+        case 3:
+            // Stay on installments page
+            break
+        case 4:
+            router.visit(route('jamaah.dashboard'))
+            break
+        default:
+            break
+    }
+}
+
+// Verification status modal
+const showVerificationModal = ref(false)
+
+const showVerificationStatus = () => {
+    showVerificationModal.value = true
+}
 
 const formatCurrency = (amount) => {
     return new Intl.NumberFormat('id-ID').format(amount)

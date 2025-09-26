@@ -23,7 +23,7 @@
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <!-- Progress Bar -->
                 <ProgressBar :current-step="jamaah.current_step" :jamaah-data="jamaah"
-                    @step-action="handleStepAction" />
+                    @step-action="handleStepAction" @navigate-to-step="handleStepNavigation" />
 
                 <!-- Main Content Grid -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -32,7 +32,7 @@
                         <!-- Package Info -->
                         <div class="bg-white rounded-lg border border-gray-200 p-6">
                             <h3 class="text-lg font-semibold text-gray-900 mb-4">Paket yang Dipilih</h3>
-                            <div class="flex items-start space-x-4">
+                            <div v-if="selectedPackage.id" class="flex items-start space-x-4">
                                 <img :src="selectedPackage.image" :alt="selectedPackage.name"
                                     class="w-24 h-24 object-cover rounded-lg">
                                 <div class="flex-1">
@@ -46,10 +46,22 @@
                                     </div>
                                 </div>
                             </div>
+                            <div v-else class="text-center py-8">
+                                <div class="w-16 h-16 bg-gray-100 rounded-lg mx-auto mb-4 flex items-center justify-center">
+                                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                    </svg>
+                                </div>
+                                <h4 class="font-medium text-gray-900 mb-2">Belum Memilih Paket</h4>
+                                <p class="text-gray-500 text-sm mb-4">Silakan lengkapi pendaftaran untuk memilih paket umroh</p>
+                                <Link :href="route('jamaah.daftar')" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                                    Pilih Paket
+                                </Link>
+                            </div>
                         </div>
 
                         <!-- Payment Info -->
-                        <div class="bg-white rounded-lg border border-gray-200 p-6">
+                        <div v-if="selectedPackage.id" class="bg-white rounded-lg border border-gray-200 p-6">
                             <div class="flex items-center justify-between mb-4">
                                 <h3 class="text-lg font-semibold text-gray-900">Informasi Pembayaran</h3>
                                 <div v-if="jamaah.program_talangan" class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
@@ -184,7 +196,7 @@
                     <!-- Right Column -->
                     <div class="space-y-6">
                         <!-- Installment Summary -->
-                        <div v-if="jamaah.program_talangan && jamaah.current_step > 2" class="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
+                        <div v-if="jamaah.program_talangan && jamaah.current_step > 2 && installmentData" class="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
                             <div class="flex items-center justify-between mb-4">
                                 <h3 class="text-lg font-semibold text-gray-900">Cicilan Anda</h3>
                                 <Link :href="route('jamaah.installments')"
@@ -198,23 +210,23 @@
                                 <div>
                                     <div class="flex justify-between text-sm mb-2">
                                         <span class="text-gray-600">Progress Pembayaran</span>
-                                        <span class="font-medium text-blue-600">75%</span>
+                                        <span class="font-medium text-blue-600">{{ installmentData.payment_progress }}%</span>
                                     </div>
                                     <div class="w-full bg-white rounded-full h-2 border">
-                                        <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full" style="width: 75%"></div>
+                                        <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full" :style="{ width: installmentData.payment_progress + '%' }"></div>
                                     </div>
-                                    <p class="text-xs text-gray-500 mt-1">3 dari 5 cicilan telah dibayar</p>
+                                    <p class="text-xs text-gray-500 mt-1">{{ installmentData.paid_count }} dari {{ installmentData.total_count }} cicilan telah dibayar</p>
                                 </div>
 
                                 <!-- Next Payment -->
-                                <div class="bg-white rounded-lg p-4 border border-blue-200">
+                                <div v-if="installmentData.next_due" class="bg-white rounded-lg p-4 border border-blue-200">
                                     <div class="flex items-center justify-between">
                                         <div>
-                                            <p class="text-sm font-medium text-gray-900">Cicilan Berikutnya</p>
-                                            <p class="text-xs text-gray-500">Jatuh tempo 15 Nov 2025</p>
+                                            <p class="text-sm font-medium text-gray-900">Cicilan ke-{{ installmentData.next_due.installment_number }}</p>
+                                            <p class="text-xs text-gray-500">Jatuh tempo {{ formatDateSimple(installmentData.next_due.due_date) }}</p>
                                         </div>
                                         <div class="text-right">
-                                            <p class="text-lg font-bold text-blue-600">Rp 4.3 Juta</p>
+                                            <p class="text-lg font-bold text-blue-600">Rp {{ formatCurrencySimple(installmentData.next_due.amount) }}</p>
                                         </div>
                                     </div>
                                     <div class="mt-3">
@@ -225,15 +237,36 @@
                                     </div>
                                 </div>
 
+                                <!-- No Next Payment -->
+                                <div v-else-if="!installmentData.is_payment_complete" class="bg-white rounded-lg p-4 border border-gray-200">
+                                    <div class="text-center text-gray-500">
+                                        <p class="text-sm">Tidak ada cicilan yang jatuh tempo</p>
+                                        <p class="text-xs">Semua cicilan sudah terbayar atau belum ada jadwal</p>
+                                    </div>
+                                </div>
+
                                 <!-- Overdue Alert -->
-                                <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+                                <div v-if="installmentData.overdue_payments && installmentData.overdue_payments.length > 0" class="bg-red-50 border border-red-200 rounded-lg p-3">
                                     <div class="flex items-start">
                                         <svg class="h-4 w-4 text-red-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                                             <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
                                         </svg>
                                         <div class="ml-2">
-                                            <p class="text-sm font-medium text-red-800">1 Pembayaran Terlambat</p>
+                                            <p class="text-sm font-medium text-red-800">{{ installmentData.overdue_payments.length }} Pembayaran Terlambat</p>
                                             <p class="text-xs text-red-600">Segera lakukan pembayaran untuk menghindari denda</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Payment Complete -->
+                                <div v-if="installmentData.is_payment_complete" class="bg-green-50 border border-green-200 rounded-lg p-3">
+                                    <div class="flex items-start">
+                                        <svg class="h-4 w-4 text-green-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                                        </svg>
+                                        <div class="ml-2">
+                                            <p class="text-sm font-medium text-green-800">Pembayaran Cicilan Selesai</p>
+                                            <p class="text-xs text-green-600">Semua cicilan telah dibayar lunas</p>
                                         </div>
                                     </div>
                                 </div>
@@ -337,6 +370,284 @@
                 </div>
             </div>
         </div>
+
+        <!-- Verification Status Modal -->
+        <div v-if="showVerificationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Status Verifikasi Dokumen & Pembayaran</h3>
+                        <button @click="showVerificationModal = false" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="space-y-6">
+                        <!-- Document Verification Status -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2" :class="(jamaah.documents_verified && jamaah.data_approved_by_cs) ? 'text-green-500' : 'text-yellow-500'" fill="currentColor" viewBox="0 0 20 20">
+                                    <path v-if="jamaah.documents_verified && jamaah.data_approved_by_cs" fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    <path v-else fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                                Status Dokumen & Data
+                            </h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Dokumen Upload:</span>
+                                    <span class="px-2 py-1 text-xs rounded-full" :class="jamaah.documents_uploaded_at ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'">
+                                        {{ jamaah.documents_uploaded_at ? 'Sudah Upload' : 'Belum Upload' }}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Persetujuan CS:</span>
+                                    <span class="px-2 py-1 text-xs rounded-full" :class="jamaah.data_approved_by_cs ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'">
+                                        {{ jamaah.data_approved_by_cs ? 'Disetujui' : 'Menunggu Persetujuan' }}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Verifikasi Dokumen:</span>
+                                    <span class="px-2 py-1 text-xs rounded-full" :class="jamaah.documents_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'">
+                                        {{ jamaah.documents_verified ? 'Terverifikasi' : 'Menunggu Verifikasi' }}
+                                    </span>
+                                </div>
+                                <p v-if="jamaah.documents_uploaded_at" class="text-xs text-gray-500">
+                                    Upload: {{ new Date(jamaah.documents_uploaded_at).toLocaleDateString('id-ID') }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Payment Verification Status -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2" :class="jamaah.payment_approved_by_admin ? 'text-green-500' : 'text-yellow-500'" fill="currentColor" viewBox="0 0 20 20">
+                                    <path v-if="jamaah.payment_approved_by_admin" fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                                    <path v-else fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"/>
+                                </svg>
+                                Status Pembayaran DP
+                            </h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Bukti Transfer:</span>
+                                    <span class="px-2 py-1 text-xs rounded-full" :class="jamaah.bukti_transfer ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'">
+                                        {{ jamaah.bukti_transfer ? 'Sudah Upload' : 'Belum Upload' }}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Jumlah DP:</span>
+                                    <span class="font-medium text-gray-900">
+                                        Rp {{ jamaah.dp_amount_paid ? new Intl.NumberFormat('id-ID').format(jamaah.dp_amount_paid) : (jamaah.dp_paid ? new Intl.NumberFormat('id-ID').format(jamaah.dp_paid) : '0') }}
+                                    </span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Verifikasi Admin:</span>
+                                    <span class="px-2 py-1 text-xs rounded-full" :class="jamaah.payment_approved_by_admin ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'">
+                                        {{ jamaah.payment_approved_by_admin ? 'Disetujui' : 'Menunggu Verifikasi' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pelunasan Status -->
+                        <div v-if="jamaah.current_step >= 3" class="border border-gray-200 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2" :class="jamaah.is_payment_complete ? 'text-green-500' : 'text-blue-500'" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/>
+                                </svg>
+                                Status Pelunasan
+                            </h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Progress Pembayaran:</span>
+                                    <span class="font-medium text-blue-600">{{ jamaah.payment_progress || 0 }}%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+                                    <div class="bg-blue-600 h-2 rounded-full" :style="{ width: (jamaah.payment_progress || 0) + '%' }"></div>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Status:</span>
+                                    <span class="px-2 py-1 text-xs rounded-full" :class="jamaah.is_payment_complete ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'">
+                                        {{ jamaah.is_payment_complete ? 'Lunas' : 'Belum Lunas' }}
+                                    </span>
+                                </div>
+                                <div v-if="jamaah.total_outstanding" class="flex justify-between items-center">
+                                    <span class="text-gray-600">Sisa Pembayaran:</span>
+                                    <span class="font-medium text-red-600">
+                                        Rp {{ new Intl.NumberFormat('id-ID').format(jamaah.total_outstanding) }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex justify-end">
+                        <button @click="showVerificationModal = false" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            Tutup
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Departure Documents Modal -->
+        <div v-if="showDepartureDocumentsModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Status Dokumen Keberangkatan</h3>
+                        <button @click="showDepartureDocumentsModal = false" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="space-y-6">
+                        <!-- Ticket Status -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2" :class="getTicketStatusColor()" fill="currentColor" viewBox="0 0 20 20">
+                                    <path v-if="jamaah.ticket_status === 'completed'" fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    <path v-else-if="jamaah.ticket_status === 'processing'" fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                                    <path v-else fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                                E-Ticket Pesawat
+                            </h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Status Pemrosesan:</span>
+                                    <span class="px-2 py-1 text-xs rounded-full" :class="getTicketStatusBadge()">
+                                        {{ getTicketStatusText() }}
+                                    </span>
+                                </div>
+                                <div v-if="jamaah.ticket_processed_at" class="flex justify-between items-center">
+                                    <span class="text-gray-600">Diproses pada:</span>
+                                    <span class="text-sm text-gray-900">
+                                        {{ new Date(jamaah.ticket_processed_at).toLocaleDateString('id-ID') }}
+                                    </span>
+                                </div>
+                                <div v-if="jamaah.ticket_file" class="flex justify-between items-center">
+                                    <span class="text-gray-600">E-Ticket:</span>
+                                    <a :href="route('jamaah.departure.download', 'ticket')" target="_blank"
+                                       class="text-blue-600 hover:text-blue-800 text-sm font-medium inline-flex items-center">
+                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                        </svg>
+                                        Download E-Ticket
+                                    </a>
+                                </div>
+                                <div v-else class="flex justify-between items-center">
+                                    <span class="text-gray-600">E-Ticket:</span>
+                                    <span class="text-sm text-gray-500">Belum tersedia</span>
+                                </div>
+                                <div v-if="jamaah.ticket_notes" class="mt-2">
+                                    <span class="text-gray-600 text-sm">Catatan:</span>
+                                    <p class="text-sm text-gray-900 mt-1 bg-gray-50 p-2 rounded">{{ jamaah.ticket_notes }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Visa Status -->
+                        <div class="border border-gray-200 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2" :class="getVisaStatusColor()" fill="currentColor" viewBox="0 0 20 20">
+                                    <path v-if="jamaah.visa_status === 'completed'" fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    <path v-else-if="jamaah.visa_status === 'processing'" fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                                    <path v-else fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                                Visa Saudi Arabia
+                            </h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Status Pemrosesan:</span>
+                                    <span class="px-2 py-1 text-xs rounded-full" :class="getVisaStatusBadge()">
+                                        {{ getVisaStatusText() }}
+                                    </span>
+                                </div>
+                                <div v-if="jamaah.visa_processed_at" class="flex justify-between items-center">
+                                    <span class="text-gray-600">Diproses pada:</span>
+                                    <span class="text-sm text-gray-900">
+                                        {{ new Date(jamaah.visa_processed_at).toLocaleDateString('id-ID') }}
+                                    </span>
+                                </div>
+                                <div v-if="jamaah.visa_file" class="flex justify-between items-center">
+                                    <span class="text-gray-600">Dokumen Visa:</span>
+                                    <a :href="route('jamaah.departure.download', 'visa')" target="_blank"
+                                       class="text-blue-600 hover:text-blue-800 text-sm font-medium inline-flex items-center">
+                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                        </svg>
+                                        Download Visa
+                                    </a>
+                                </div>
+                                <div v-else class="flex justify-between items-center">
+                                    <span class="text-gray-600">Dokumen Visa:</span>
+                                    <span class="text-sm text-gray-500">Belum tersedia</span>
+                                </div>
+                                <div v-if="jamaah.visa_notes" class="mt-2">
+                                    <span class="text-gray-600 text-sm">Catatan:</span>
+                                    <p class="text-sm text-gray-900 mt-1 bg-gray-50 p-2 rounded">{{ jamaah.visa_notes }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Overall Status -->
+                        <div class="border border-gray-200 rounded-lg p-4 bg-gradient-to-r from-blue-50 to-purple-50">
+                            <h4 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                <svg class="w-5 h-5 mr-2" :class="getOverallStatusColor()" fill="currentColor" viewBox="0 0 20 20">
+                                    <path v-if="isReadyForDeparture()" fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    <path v-else fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                                </svg>
+                                Status Keseluruhan
+                            </h4>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-600">Kesiapan Keberangkatan:</span>
+                                    <span class="px-3 py-1 text-sm font-medium rounded-full" :class="getReadinessStatusBadge()">
+                                        {{ getReadinessStatusText() }}
+                                    </span>
+                                </div>
+                                <div v-if="jamaah.rencana_keberangkatan" class="flex justify-between items-center">
+                                    <span class="text-gray-600">Rencana Keberangkatan:</span>
+                                    <span class="text-sm font-medium text-gray-900">
+                                        {{ new Date(jamaah.rencana_keberangkatan).toLocaleDateString('id-ID', {
+                                            weekday: 'long',
+                                            year: 'numeric',
+                                            month: 'long',
+                                            day: 'numeric'
+                                        }) }}
+                                    </span>
+                                </div>
+                                <div class="mt-3 p-3 bg-white rounded-lg border">
+                                    <p class="text-sm text-gray-600 mb-2">Informasi Penting:</p>
+                                    <ul class="text-xs text-gray-500 space-y-1">
+                                        <li v-if="!isReadyForDeparture()">• {{ getNextRequiredAction() }}</li>
+                                        <li v-if="isReadyForDeparture()">• Semua dokumen sudah siap untuk keberangkatan</li>
+                                        <li>• Hubungi customer service jika ada pertanyaan</li>
+                                        <li v-if="jamaah.rencana_keberangkatan">• Siap-siap keberangkatan pada {{ new Date(jamaah.rencana_keberangkatan).toLocaleDateString('id-ID') }}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button v-if="isReadyForDeparture()" @click="downloadAllDocuments()"
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors inline-flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                            Download Semua
+                        </button>
+                        <button @click="showDepartureDocumentsModal = false" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            Tutup
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </AuthenticatedLayout>
 </template>
 
@@ -350,20 +661,35 @@ const props = defineProps({
     jamaah: {
         type: Object,
         required: true
+    },
+    selectedPackage: {
+        type: Object,
+        default: null
+    },
+    installmentData: {
+        type: Object,
+        default: null
     }
 })
 
 const showPaymentModal = ref(false)
 
-// Mock data - replace with real data from backend
-const selectedPackage = {
-    id: 1,
-    name: 'City Tour Malaysia',
-    duration: 'Pekanbaru - Kuala Lumpur - Madinah',
-    price: 24500000,
-    dp: 3000000,
-    image: 'https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
-}
+// Computed property to get selected package or fallback
+const selectedPackage = computed(() => {
+    if (props.selectedPackage) {
+        return props.selectedPackage
+    }
+
+    // Fallback data if no package selected
+    return {
+        id: null,
+        name: 'Belum memilih paket',
+        duration: '-',
+        price: 0,
+        dp: 0,
+        image: 'https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+    }
+})
 
 // Document configuration
 const requiredDocuments = ref({
@@ -404,19 +730,37 @@ const timeline = ref([
 ])
 
 const formatPrice = (price) => {
+    if (!price || price === 0) {
+        return '-'
+    }
     return (price / 1000000).toFixed(0) + ' Juta'
+}
+
+const formatCurrencySimple = (amount) => {
+    return (amount / 1000000).toFixed(1) + ' Juta'
+}
+
+const formatDateSimple = (date) => {
+    return new Date(date).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+    })
 }
 
 const handleStepAction = (action) => {
     switch (action) {
+        case 'continue-registration':
+            router.visit(route('jamaah.daftar'))
+            break
         case 'pay-dp':
-            showPaymentModal.value = true
+            router.visit(route('jamaah.pembayaran'))
             break
         case 'contact-admin':
             window.open(`https://wa.me/6281234567890?text=Halo, saya ${props.jamaah.nama_lengkap} dengan ID ${props.jamaah.id}. Saya memerlukan bantuan mengenai pendaftaran umroh.`, '_blank')
             break
         case 'view-payment-details':
-            // Navigate to payment details
+            router.visit(route('jamaah.pembayaran'))
             break
         case 'view-installments':
             router.visit(route('jamaah.installments'))
@@ -424,11 +768,49 @@ const handleStepAction = (action) => {
         case 'upload-documents':
             router.visit(route('jamaah.dokumen'))
             break
+        case 'pay-remaining-balance':
+            router.visit(route('jamaah.installments'))
+            break
+        case 'check-verification-status':
+            // Show detailed verification status modal or scroll to status section
+            showVerificationStatus()
+            break
         case 'view-manasik-schedule':
             router.visit(route('jamaah.manasik'))
             break
         case 'view-itinerary':
             // Navigate to itinerary
+            break
+        case 'check-departure-documents':
+            showDepartureDocuments()
+            break
+    }
+}
+
+const handleStepNavigation = (stepId) => {
+    // Update current step for testing purposes
+    // Note: This is for testing only - in production, steps should be controlled by backend
+    console.log(`🧪 Testing navigation to step ${stepId}`)
+
+    // Update the jamaah data to reflect the new step
+    props.jamaah.current_step = stepId
+
+    // Navigate to appropriate page based on step
+    switch (stepId) {
+        case 1:
+            router.visit(route('jamaah.daftar'))
+            break
+        case 2:
+            router.visit(route('jamaah.pembayaran'))
+            break
+        case 3:
+            router.visit(route('jamaah.installments'))
+            break
+        case 4:
+            // Stay on dashboard for completed step
+            break
+        default:
+            // Stay on current page
             break
     }
 }
@@ -483,4 +865,130 @@ const viewDocument = (documentKey) => {
 
 // Get jamaah data from props for document checking
 const jamaahData = computed(() => props.jamaah)
+
+// Verification status modal
+const showVerificationModal = ref(false)
+
+const showVerificationStatus = () => {
+    showVerificationModal.value = true
+}
+
+// Departure documents modal
+const showDepartureDocumentsModal = ref(false)
+
+const showDepartureDocuments = () => {
+    showDepartureDocumentsModal.value = true
+}
+
+// Helper functions for departure documents modal
+const getTicketStatusColor = () => {
+    switch (props.jamaah.ticket_status) {
+        case 'completed': return 'text-green-500'
+        case 'processing': return 'text-blue-500'
+        case 'pending': return 'text-yellow-500'
+        default: return 'text-gray-500'
+    }
+}
+
+const getTicketStatusBadge = () => {
+    switch (props.jamaah.ticket_status) {
+        case 'completed': return 'bg-green-100 text-green-800'
+        case 'processing': return 'bg-blue-100 text-blue-800'
+        case 'pending': return 'bg-yellow-100 text-yellow-800'
+        default: return 'bg-gray-100 text-gray-800'
+    }
+}
+
+const getTicketStatusText = () => {
+    switch (props.jamaah.ticket_status) {
+        case 'completed': return 'Selesai'
+        case 'processing': return 'Sedang Diproses'
+        case 'pending': return 'Menunggu Proses'
+        default: return 'Belum Diproses'
+    }
+}
+
+const getVisaStatusColor = () => {
+    switch (props.jamaah.visa_status) {
+        case 'completed': return 'text-green-500'
+        case 'processing': return 'text-blue-500'
+        case 'pending': return 'text-yellow-500'
+        default: return 'text-gray-500'
+    }
+}
+
+const getVisaStatusBadge = () => {
+    switch (props.jamaah.visa_status) {
+        case 'completed': return 'bg-green-100 text-green-800'
+        case 'processing': return 'bg-blue-100 text-blue-800'
+        case 'pending': return 'bg-yellow-100 text-yellow-800'
+        default: return 'bg-gray-100 text-gray-800'
+    }
+}
+
+const getVisaStatusText = () => {
+    switch (props.jamaah.visa_status) {
+        case 'completed': return 'Selesai'
+        case 'processing': return 'Sedang Diproses'
+        case 'pending': return 'Menunggu Proses'
+        default: return 'Belum Diproses'
+    }
+}
+
+const getOverallStatusColor = () => {
+    return isReadyForDeparture() ? 'text-green-500' : 'text-blue-500'
+}
+
+const isReadyForDeparture = () => {
+    return props.jamaah.ticket_status === 'completed' && props.jamaah.visa_status === 'completed'
+}
+
+const getReadinessStatusBadge = () => {
+    return isReadyForDeparture() ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+}
+
+const getReadinessStatusText = () => {
+    return isReadyForDeparture() ? 'Siap Berangkat' : 'Dalam Proses'
+}
+
+const getNextRequiredAction = () => {
+    if (props.jamaah.ticket_status === 'pending' && props.jamaah.visa_status === 'pending') {
+        return 'Menunggu pemrosesan tiket dan visa'
+    } else if (props.jamaah.ticket_status === 'pending') {
+        return 'Menunggu pemrosesan tiket pesawat'
+    } else if (props.jamaah.visa_status === 'pending') {
+        return 'Menunggu pemrosesan visa Saudi Arabia'
+    } else if (props.jamaah.ticket_status === 'processing' || props.jamaah.visa_status === 'processing') {
+        return 'Dokumen sedang dalam proses'
+    }
+    return 'Semua dokumen dalam proses'
+}
+
+const downloadAllDocuments = () => {
+    const documents = []
+    if (props.jamaah.ticket_file) {
+        documents.push({ name: 'E-Ticket_Pesawat', url: route('jamaah.departure.download', 'ticket') })
+    }
+    if (props.jamaah.visa_file) {
+        documents.push({ name: 'Visa_Saudi_Arabia', url: route('jamaah.departure.download', 'visa') })
+    }
+
+    if (documents.length === 0) {
+        alert('Belum ada dokumen yang tersedia untuk diunduh')
+        return
+    }
+
+    // Download each document
+    documents.forEach((doc, index) => {
+        setTimeout(() => {
+            const link = document.createElement('a')
+            link.href = doc.url
+            link.download = doc.name
+            link.target = '_blank'
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+        }, index * 1000) // Delay each download by 1 second
+    })
+}
 </script>

@@ -29,6 +29,9 @@ class JamaahProfileController extends Controller
                 'documents' => $profile->getUploadedDocuments(),
                 'documents_uploaded_at' => $profile->documents_uploaded_at,
                 'documents_verified' => $profile->documents_verified,
+                'data_approved_by_cs' => $profile->data_approved_by_cs,
+                'payment_approved_by_admin' => $profile->payment_approved_by_admin,
+                'is_program_talangan' => $profile->program_talangan,
                 'required_documents' => $profile->getRequiredDocuments(),
                 'optional_documents' => $profile->getOptionalDocuments()
             ]
@@ -136,6 +139,31 @@ class JamaahProfileController extends Controller
         return response()->download($path);
     }
 
+    public function downloadDepartureDocument(Request $request, $type)
+    {
+        $profile = Auth::user()->jamaahProfile;
+
+        if (!$profile) {
+            abort(404, 'Profile not found');
+        }
+
+        $fileField = $type . '_file';
+
+        if (!$profile->$fileField) {
+            abort(404, 'Dokumen tidak ditemukan');
+        }
+
+        $path = storage_path('app/public/' . $profile->$fileField);
+
+        if (!file_exists($path)) {
+            abort(404, 'File tidak ditemukan');
+        }
+
+        $filename = $type === 'ticket' ? 'Tiket_Keberangkatan.pdf' : 'Visa_Keberangkatan.pdf';
+
+        return response()->download($path, $filename);
+    }
+
     public function showPayment(): Response
     {
         $profile = Auth::user()->jamaahProfile;
@@ -152,11 +180,16 @@ class JamaahProfileController extends Controller
                 'current_step' => $profile->getCurrentStep(),
                 'paket_id' => $profile->paket_id,
                 'paket_name' => 'Paket Umroh Premium', // TODO: get from packages table
-                'dp_paid' => $profile->dp_paid,
+                'expected_dp_amount' => (float) $profile->dp_paid, // Expected DP amount from step 1
+                'dp_amount_paid' => $profile->dp_amount_paid, // Actual amount paid
                 'bukti_transfer' => $profile->bukti_transfer,
                 'status' => $profile->status,
                 'created_at' => $profile->created_at,
-                'can_upload_payment' => $profile->current_step >= 2
+                'can_upload_payment' => $profile->current_step >= 2,
+                'documents_verified' => $profile->documents_verified,
+                'data_approved_by_cs' => $profile->data_approved_by_cs,
+                'payment_approved_by_admin' => $profile->payment_approved_by_admin,
+                'is_program_talangan' => $profile->program_talangan
             ]
         ]);
     }
@@ -171,7 +204,14 @@ class JamaahProfileController extends Controller
 
         $request->validate([
             'bukti_transfer' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120', // 5MB max
+            'dp_amount' => 'required|numeric|min:1000000', // Minimal 1 juta
         ]);
+
+        // Validate that DP amount matches expected amount from step 1
+        $expectedDpAmount = $profile->dp_paid;
+        if ($expectedDpAmount && $request->input('dp_amount') != $expectedDpAmount) {
+            return redirect()->back()->with('error', 'Jumlah DP harus sesuai dengan yang diinputkan di pendaftaran: Rp ' . number_format($expectedDpAmount, 0, ',', '.'));
+        }
 
         try {
             // Delete old file if exists
@@ -186,6 +226,10 @@ class JamaahProfileController extends Controller
 
             // Update profile
             $profile->bukti_transfer = $path;
+            $profile->dp_amount_paid = $request->input('dp_amount'); // Save actual DP amount paid
+
+            // Set payment type based on DP amount vs package price
+            $profile->setPaymentType();
             $profile->save();
 
             // Auto advance to next step
@@ -203,8 +247,8 @@ class JamaahProfileController extends Controller
             $profile->refresh(); // Refresh to get updated current_step
             \Log::info('Payment upload - Current step after advancement: ' . $profile->current_step);
 
-            if ($profile->current_step >= 4) {
-                return redirect()->back()->with('success', 'Bukti pembayaran berhasil diupload! Anda dapat melanjutkan ke tahap upload dokumen.');
+            if ($profile->current_step >= 3) {
+                return redirect()->back()->with('success', 'Bukti pembayaran berhasil diupload! Menunggu verifikasi admin untuk melanjutkan ke tahap pelunasan & manasik.');
             } else {
                 return redirect()->back()->with('success', 'Bukti pembayaran berhasil diupload.');
             }

@@ -26,7 +26,8 @@ class RoleSeeder extends Seeder
                     'manage_roles',
                     'system_settings',
                     'approve_payments',
-                    'manage_agents'
+                    'manage_agents',
+                    'manage_marketing',
                 ],
                 'is_active' => true
             ],
@@ -78,6 +79,23 @@ class RoleSeeder extends Seeder
                     'view_assigned_jamaah',
                     'earn_commission',
                     'update_jamaah_info'
+                ],
+                'is_active' => true
+            ],
+            [
+                'name' => 'operasional',
+                'display_name' => 'Operasional',
+                'description' => 'Operations team for ticket and visa processing',
+                'permissions' => [
+                    'view_approved_jamaah',
+                    'process_tickets',
+                    'process_visas',
+                    'upload_ticket_documents',
+                    'upload_visa_documents',
+                    'update_ticket_status',
+                    'update_visa_status',
+                    'receive_jamaah_notifications',
+                    'send_process_notifications'
                 ],
                 'is_active' => true
             ],

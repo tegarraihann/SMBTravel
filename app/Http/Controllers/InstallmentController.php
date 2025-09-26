@@ -44,7 +44,13 @@ class InstallmentController extends Controller
                 'id' => $jamaah->id,
                 'nama_lengkap' => $jamaah->nama_lengkap_bin_binti,
                 'program_talangan' => $jamaah->program_talangan,
-                'current_step' => $jamaah->getCurrentStep()
+                'current_step' => $jamaah->getCurrentStep(),
+                'documents_verified' => $jamaah->documents_verified,
+                'data_approved_by_cs' => $jamaah->data_approved_by_cs,
+                'payment_approved_by_admin' => $jamaah->payment_approved_by_admin,
+                'is_program_talangan' => $jamaah->program_talangan,
+                'is_payment_complete' => $dashboardData['data']['is_payment_complete'] ?? false,
+                'total_outstanding' => $dashboardData['data']['total_outstanding'] ?? 0
             ]
         ]);
     }

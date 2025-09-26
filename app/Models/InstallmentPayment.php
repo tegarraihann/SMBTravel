@@ -14,6 +14,8 @@ class InstallmentPayment extends Model
         'due_date',
         'amount',
         'status',
+        'payment_type',
+        'description',
         'paid_at',
         'payment_proof',
         'approved_by',

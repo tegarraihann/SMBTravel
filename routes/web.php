@@ -3,6 +3,8 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\JamaahProfileController;
+use App\Http\Controllers\UmrohPackageController;
+use App\Http\Controllers\Admin\MarketingController;
 use App\Models\JamaahProfile;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
@@ -27,6 +29,31 @@ Route::post('/jamaah/daftar', function (Request $request) {
         return redirect()->route('jamaah.dashboard');
     }
 
+    // Parse JSON fields from FormData first
+    $parsedData = $request->all();
+
+    // Parse program_talangan
+    if ($request->has('program_talangan')) {
+        $parsedData['program_talangan'] = $request->input('program_talangan') === 'true';
+    }
+
+    // Parse cicilan_data
+    if ($request->has('cicilan_data') && $request->input('cicilan_data') !== 'null' && $request->input('cicilan_data') !== '') {
+        $parsedData['cicilan_data'] = json_decode($request->input('cicilan_data'), true);
+    } else {
+        $parsedData['cicilan_data'] = [];
+    }
+
+    // Parse jamaah_rombongan
+    if ($request->has('jamaah_rombongan') && $request->input('jamaah_rombongan') !== 'null' && $request->input('jamaah_rombongan') !== '') {
+        $parsedData['jamaah_rombongan'] = json_decode($request->input('jamaah_rombongan'), true);
+    } else {
+        $parsedData['jamaah_rombongan'] = [];
+    }
+
+    // Create new request with parsed data for validation
+    $request->merge($parsedData);
+
     // Validate the form data
     $validated = $request->validate([
         'nama_lengkap_bin_binti' => 'required|string|max:255',
@@ -39,6 +66,8 @@ Route::post('/jamaah/daftar', function (Request $request) {
         'no_telepon' => 'required|string',
         'pekerjaan' => 'required|string|max:255',
         'nama_marketing' => 'nullable|string|max:255',
+        'marketing_id' => 'required|exists:marketings,id',
+        'agent_id' => 'nullable|exists:marketing_agents,id',
         'paket_id' => 'required|integer',
         'rencana_keberangkatan' => 'nullable|date',
         'program_talangan' => 'boolean',
@@ -46,6 +75,13 @@ Route::post('/jamaah/daftar', function (Request $request) {
         'cicilan_data.*.dp' => 'numeric|min:0',
         'cicilan_data.*.tenor' => 'integer|min:1',
         'cicilan_data.*.cicilan_perbulan' => 'numeric|min:0',
+        // Document validation
+        'foto_ktp' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+        'foto_kk' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+        'foto_diri' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+        'foto_paspor' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+        'scan_buku_nikah' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+        'scan_akta_lahir' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
         'sistem_pembayaran' => 'string|max:255',
         'dp_paid' => 'nullable|numeric|min:0',
         'tgl_pelunasan' => 'nullable|date',
@@ -65,6 +101,21 @@ Route::post('/jamaah/daftar', function (Request $request) {
         'setuju' => 'required|accepted'
     ]);
 
+    // Handle file uploads
+    $documentPaths = [];
+    $requiredDocuments = ['foto_ktp', 'foto_kk', 'foto_diri', 'foto_paspor'];
+    $optionalDocuments = ['scan_buku_nikah', 'scan_akta_lahir'];
+
+    foreach (array_merge($requiredDocuments, $optionalDocuments) as $documentType) {
+        if ($request->hasFile($documentType)) {
+            $file = $request->file($documentType);
+            $filename = $documentType . '_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('jamaah-documents', $filename, 'public');
+            $documentPaths[$documentType] = $path;
+        }
+    }
+
+
     // Create jamaah profile
     $jamaahProfile = JamaahProfile::create([
         'user_id' => $user->id,
@@ -78,20 +129,30 @@ Route::post('/jamaah/daftar', function (Request $request) {
         'no_telepon' => $validated['no_telepon'],
         'pekerjaan' => $validated['pekerjaan'],
         'nama_marketing' => $validated['nama_marketing'],
+        'marketing_id' => $validated['marketing_id'],
+        'agent_id' => $validated['agent_id'],
         'paket_id' => $validated['paket_id'],
         'rencana_keberangkatan' => $validated['rencana_keberangkatan'],
         'program_talangan' => $validated['program_talangan'] ?? false,
-        'cicilan_data' => $validated['cicilan_data'] ?? null,
+        'cicilan_data' => $validated['cicilan_data'],
         'sistem_pembayaran' => $validated['sistem_pembayaran'] ?? 'Transfer',
         'dp_paid' => $validated['dp_paid'] ?? 0,
         'tgl_pelunasan' => $validated['tgl_pelunasan'],
-        'jamaah_rombongan' => $validated['jamaah_rombongan'] ?? [],
+        'jamaah_rombongan' => $validated['jamaah_rombongan'],
         'sumber_info_mmb' => $validated['sumber_info_mmb'],
         'kelengkapan_dokumen' => $validated['kelengkapan_dokumen'],
         'tanggal_diterima_perlengkapan' => $validated['tanggal_diterima_perlengkapan'],
         'detail_perlengkapan_diterima' => $validated['detail_perlengkapan_diterima'],
         'pic_penerima' => $validated['pic_penerima'],
         'request_khusus' => $validated['request_khusus'],
+        // Document paths
+        'foto_ktp' => $documentPaths['foto_ktp'] ?? null,
+        'foto_kk' => $documentPaths['foto_kk'] ?? null,
+        'foto_diri' => $documentPaths['foto_diri'] ?? null,
+        'foto_paspor' => $documentPaths['foto_paspor'] ?? null,
+        'scan_buku_nikah' => $documentPaths['scan_buku_nikah'] ?? null,
+        'scan_akta_lahir' => $documentPaths['scan_akta_lahir'] ?? null,
+        'documents_uploaded_at' => now(),
         'current_step' => 2, // Otomatis ke step 2 (Pembayaran)
         'status' => 'processing',
         'data_approved_by_cs' => false,
@@ -101,6 +162,52 @@ Route::post('/jamaah/daftar', function (Request $request) {
 
     return redirect()->route('jamaah.dashboard');
 })->middleware(['auth', 'role:jamaah']);
+
+// API Routes for Marketing Data
+Route::prefix('api/admin/marketing')->middleware(['auth'])->group(function () {
+    Route::get('/', function () {
+        $marketings = \App\Models\Marketing::with('agents')
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $marketings->map(function ($marketing) {
+                return [
+                    'id' => $marketing->id,
+                    'code' => $marketing->code,
+                    'name' => $marketing->name,
+                    'phone' => $marketing->phone,
+                    'email' => $marketing->email,
+                    'status' => $marketing->status,
+                    'agents_count' => $marketing->agents->count()
+                ];
+            })
+        ]);
+    });
+
+    Route::get('/{marketing}/agents', function (\App\Models\Marketing $marketing) {
+        $agents = $marketing->agents()
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $agents->map(function ($agent) {
+                return [
+                    'id' => $agent->id,
+                    'name' => $agent->name,
+                    'phone' => $agent->phone,
+                    'email' => $agent->email,
+                    'commission_rate' => $agent->commission_rate,
+                    'status' => $agent->status
+                ];
+            })
+        ]);
+    });
+});
 
 Route::get('/jamaah/dashboard', function () {
     $user = auth()->user();
@@ -115,7 +222,34 @@ Route::get('/jamaah/dashboard', function () {
         return redirect()->route('jamaah.daftar');
     }
 
-    $jamaahProfile = $user->jamaahProfile;
+    $jamaahProfile = $user->jamaahProfile->load('umrohPackage');
+
+    // Auto-fix documents_verified jika sudah CS+Admin approved tapi documents_verified masih false
+    if ($jamaahProfile->data_approved_by_cs &&
+        $jamaahProfile->payment_approved_by_admin &&
+        $jamaahProfile->hasAllRequiredDocuments() &&
+        !$jamaahProfile->documents_verified) {
+
+        $jamaahProfile->documents_verified = true;
+        $jamaahProfile->documents_uploaded_at = $jamaahProfile->documents_uploaded_at ?: now();
+        $jamaahProfile->save();
+    }
+
+    // Get selected package data
+    $selectedPackage = null;
+    if ($jamaahProfile->umrohPackage) {
+        $selectedPackage = [
+            'id' => $jamaahProfile->umrohPackage->id,
+            'name' => $jamaahProfile->umrohPackage->nama_paket,
+            'description' => $jamaahProfile->umrohPackage->deskripsi,
+            'duration' => $jamaahProfile->umrohPackage->durasi_hari . ' hari',
+            'price' => (float) $jamaahProfile->umrohPackage->harga,
+            'formatted_price' => $jamaahProfile->umrohPackage->formatted_price,
+            'facilities' => $jamaahProfile->umrohPackage->fasilitas,
+            'image' => 'https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80', // Default image for now
+            'dp' => $jamaahProfile->dp_paid ?: ($jamaahProfile->umrohPackage->harga * 0.1) // 10% dari harga paket sebagai default DP
+        ];
+    }
 
     $jamaahData = [
         'id' => $jamaahProfile->id,
@@ -125,6 +259,8 @@ Route::get('/jamaah/dashboard', function () {
         'paket_id' => $jamaahProfile->paket_id,
         'status' => $jamaahProfile->status,
         'dp_paid' => $jamaahProfile->dp_paid,
+        'program_talangan' => $jamaahProfile->program_talangan,
+        'rencana_keberangkatan' => $jamaahProfile->rencana_keberangkatan,
         'created_at' => $jamaahProfile->created_at,
         'foto_ktp' => $jamaahProfile->foto_ktp,
         'foto_kk' => $jamaahProfile->foto_kk,
@@ -132,11 +268,42 @@ Route::get('/jamaah/dashboard', function () {
         'foto_diri' => $jamaahProfile->foto_diri,
         'bukti_transfer' => $jamaahProfile->bukti_transfer,
         'documents_uploaded_at' => $jamaahProfile->documents_uploaded_at,
-        'documents_verified' => $jamaahProfile->documents_verified
+        'documents_verified' => $jamaahProfile->documents_verified,
+        'payment_approved_by_admin' => $jamaahProfile->payment_approved_by_admin,
+        'data_approved_by_cs' => $jamaahProfile->data_approved_by_cs,
+        'dp_amount_paid' => $jamaahProfile->dp_amount_paid,
+        'is_program_talangan' => $jamaahProfile->program_talangan,
+        // Payment fields baru
+        'payment_type' => $jamaahProfile->payment_type,
+        'remaining_amount' => $jamaahProfile->remaining_amount,
+        'is_full_payment_upfront' => $jamaahProfile->is_full_payment_upfront,
+        'pelunasan_amount_paid' => $jamaahProfile->pelunasan_amount_paid,
+        'pelunasan_approved_by_admin' => $jamaahProfile->pelunasan_approved_by_admin,
+        // Departure documents status
+        'ticket_status' => $jamaahProfile->ticket_status ?: 'pending',
+        'visa_status' => $jamaahProfile->visa_status ?: 'pending',
+        'ticket_file' => $jamaahProfile->ticket_file,
+        'visa_file' => $jamaahProfile->visa_file
     ];
 
+    // Add payment data for both talangan and non-talangan
+    $installmentData = null;
+    $installmentService = app(\App\Services\InstallmentService::class);
+    $dashboardData = $installmentService->getJamaahPaymentDashboard($jamaahProfile);
+
+    if ($dashboardData['success']) {
+        $installmentData = $dashboardData['data'];
+
+        // Add payment status data to jamaahData for ProgressBar
+        $jamaahData['is_payment_complete'] = $installmentData['is_payment_complete'] ?? false;
+        $jamaahData['total_outstanding'] = $installmentData['total_outstanding'] ?? 0;
+        $jamaahData['payment_progress'] = $installmentData['payment_progress'] ?? 0;
+    }
+
     return Inertia::render('Jamaah/Dashboard', [
-        'jamaah' => $jamaahData
+        'jamaah' => $jamaahData,
+        'selectedPackage' => $selectedPackage,
+        'installmentData' => $installmentData
     ]);
 })->middleware(['auth', 'role:jamaah'])->name('jamaah.dashboard');
 
@@ -155,6 +322,10 @@ Route::prefix('jamaah')->name('jamaah.')->middleware(['auth', 'role:jamaah'])->g
 
     Route::get('/dokumen/download/{type}', [JamaahProfileController::class, 'downloadDocument'])
         ->name('dokumen.download')->middleware('permission:upload_documents');
+
+    // Download departure documents (ticket/visa)
+    Route::get('/departure-documents/download/{type}', [JamaahProfileController::class, 'downloadDepartureDocument'])
+        ->name('departure.download')->where('type', 'ticket|visa');
 
     Route::post('/dokumen/complete', [JamaahProfileController::class, 'completeDocumentUpload'])
         ->name('dokumen.complete')->middleware('permission:upload_documents');
@@ -253,7 +424,40 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
 
         // Check if both CS and Admin have approved, then advance step
         if ($jamaahProfile->data_approved_by_cs && $jamaahProfile->payment_approved_by_admin) {
-            $jamaahProfile->advanceToNextStep();
+            // Update to step 3 (Pelunasan & Manasik) after both approvals
+            if ($jamaahProfile->current_step == 2) {
+                $jamaahProfile->current_step = 3;
+                $jamaahProfile->save();
+            }
+
+            // Auto-verify documents if CS approved data and documents are uploaded
+            if ($jamaahProfile->hasAllRequiredDocuments() && !$jamaahProfile->documents_verified) {
+                $jamaahProfile->documents_verified = true;
+                $jamaahProfile->documents_uploaded_at = $jamaahProfile->documents_uploaded_at ?: now();
+                $jamaahProfile->save();
+            }
+
+            // Generate installment schedule if program talangan
+            if ($jamaahProfile->program_talangan && $jamaahProfile->rencana_keberangkatan) {
+                \App\Jobs\GenerateInstallmentSchedule::dispatch($jamaahProfile);
+            }
+
+            // Send WhatsApp notification to Operasional team
+            $operasionalUsers = \App\Models\User::whereHas('roles', function ($query) {
+                $query->where('name', 'operasional');
+            })->whereNotNull('phone')->get();
+
+            $message = "🔔 *JAMAAH BARU SIAP DIPROSES*\n\n";
+            $message .= "Nama: {$jamaahProfile->nama_lengkap_bin_binti}\n";
+            $message .= "Paket: {$jamaahProfile->umrohPackage->nama_paket}\n";
+            $message .= "Status: CS & Admin telah menyetujui\n";
+            $message .= "Waktu: " . now()->format('d/m/Y H:i') . "\n\n";
+            $message .= "Silakan proses tiket dan visa untuk jamaah ini.";
+
+            $whatsappService = app(\App\Services\WhatsAppService::class);
+            foreach ($operasionalUsers as $user) {
+                $whatsappService->sendMessage($user->phone, $message);
+            }
         }
 
         return response()->json(['message' => 'Pembayaran berhasil disetujui oleh Admin']);
@@ -423,6 +627,21 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
         Route::get('/{installment}/download', [\App\Http\Controllers\InstallmentController::class, 'downloadPaymentProof'])
             ->name('download')->middleware('permission:manage_jamaah');
     });
+
+    Route::prefix('master-marketing')->name('master-marketing')->group(function () {
+        Route::get('/', [\App\Http\Controllers\InstallmentController::class, 'adminIndex'])
+            ->name('index')->middleware('permission:manage_jamaah');
+    });
+
+    Route::prefix('marketing')->name('marketing.')->middleware('permission:manage_marketing')->group(function () {
+        Route::get('/', [MarketingController::class, 'index'])->name('index');
+        Route::get('/create', [MarketingController::class, 'create'])->name('create');
+        Route::post('/', [MarketingController::class, 'store'])->name('store');
+        Route::get('/{marketing}/edit', [MarketingController::class, 'edit'])->name('edit');
+        Route::put('/{marketing}', [MarketingController::class, 'update'])->name('update');
+        Route::delete('/{marketing}', [MarketingController::class, 'destroy'])->name('destroy');
+    });
+
 });
 
 // Marketing routes - requires marketing role
@@ -576,7 +795,35 @@ Route::prefix('cs')->name('cs.')->middleware(['auth', 'role:cs'])->group(functio
 
         // Check if both CS and Admin have approved, then advance step
         if ($jamaahProfile->data_approved_by_cs && $jamaahProfile->payment_approved_by_admin) {
-            $jamaahProfile->advanceToNextStep();
+            // Update to step 3 (Pelunasan & Manasik) after both approvals
+            if ($jamaahProfile->current_step == 2) {
+                $jamaahProfile->current_step = 3;
+                $jamaahProfile->save();
+            }
+
+            // Auto-verify documents if CS approved data and documents are uploaded
+            if ($jamaahProfile->hasAllRequiredDocuments() && !$jamaahProfile->documents_verified) {
+                $jamaahProfile->documents_verified = true;
+                $jamaahProfile->documents_uploaded_at = $jamaahProfile->documents_uploaded_at ?: now();
+                $jamaahProfile->save();
+            }
+
+            // Send WhatsApp notification to Operasional team
+            $operasionalUsers = \App\Models\User::whereHas('roles', function ($query) {
+                $query->where('name', 'operasional');
+            })->whereNotNull('phone')->get();
+
+            $message = "🔔 *JAMAAH BARU SIAP DIPROSES*\n\n";
+            $message .= "Nama: {$jamaahProfile->nama_lengkap_bin_binti}\n";
+            $message .= "Paket: {$jamaahProfile->umrohPackage->nama_paket}\n";
+            $message .= "Status: CS & Admin telah menyetujui\n";
+            $message .= "Waktu: " . now()->format('d/m/Y H:i') . "\n\n";
+            $message .= "Silakan proses tiket dan visa untuk jamaah ini.";
+
+            $whatsappService = app(\App\Services\WhatsAppService::class);
+            foreach ($operasionalUsers as $user) {
+                $whatsappService->sendMessage($user->phone, $message);
+            }
         }
 
         return response()->json(['message' => 'Data jamaah berhasil disetujui oleh CS']);
@@ -637,9 +884,17 @@ Route::get('/kontak', function () {
 
 // API routes untuk AJAX calls
 Route::prefix('api')->group(function () {
-    Route::get('/packages', function () {
-        // Return packages data
-        return response()->json([]);
+    // Umroh Package API routes
+    Route::get('/packages', [UmrohPackageController::class, 'forDropdown']);
+    Route::get('/packages/{packageId}/schedules', [UmrohPackageController::class, 'getSchedules']);
+
+    // Admin Package API routes
+    Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
+        Route::apiResource('packages', UmrohPackageController::class);
+        Route::get('/packages/{package}/schedules', [\App\Http\Controllers\UmrohScheduleController::class, 'getPackageSchedules']);
+        Route::post('/packages/{package}/schedules', [\App\Http\Controllers\UmrohScheduleController::class, 'store']);
+        Route::put('/schedules/{schedule}', [\App\Http\Controllers\UmrohScheduleController::class, 'update']);
+        Route::delete('/schedules/{schedule}', [\App\Http\Controllers\UmrohScheduleController::class, 'destroy']);
     });
 
     Route::get('/jamaah/{id}/status', function ($id) {
@@ -685,9 +940,41 @@ Route::get('/dashboard', function () {
         return redirect()->route('agent.dashboard');
     }
 
+    if ($user->hasRole('operasional')) {
+        return redirect()->route('operasional.dashboard');
+    }
+
     // Default dashboard for users without specific roles
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+// Operasional routes group - requires operasional role
+Route::prefix('operasional')->name('operasional.')->middleware(['auth', 'role:operasional'])->group(function () {
+    // Dashboard operasional
+    Route::get('/', [App\Http\Controllers\Admin\OperasionalController::class, 'dashboard'])
+        ->name('dashboard')->middleware('permission:view_approved_jamaah');
+    // List jamaah untuk diproses
+    Route::get('/jamaah', [App\Http\Controllers\Admin\OperasionalController::class, 'index'])
+        ->name('jamaah.index')->middleware('permission:view_approved_jamaah');
+
+    // Jamaah detail
+    Route::get('/jamaah/{id}', [App\Http\Controllers\Admin\OperasionalController::class, 'show'])
+        ->name('jamaah.show')->middleware('permission:view_approved_jamaah');
+
+    // Ticket operations
+    Route::patch('/jamaah/{id}/ticket/status', [App\Http\Controllers\Admin\OperasionalController::class, 'updateTicketStatus'])
+        ->name('jamaah.ticket.status')->middleware('permission:update_ticket_status');
+
+    Route::post('/jamaah/{id}/ticket/upload', [App\Http\Controllers\Admin\OperasionalController::class, 'uploadTicketDocument'])
+        ->name('jamaah.ticket.upload')->middleware('permission:upload_ticket_documents');
+
+    // Visa operations
+    Route::patch('/jamaah/{id}/visa/status', [App\Http\Controllers\Admin\OperasionalController::class, 'updateVisaStatus'])
+        ->name('jamaah.visa.status')->middleware('permission:update_visa_status');
+
+    Route::post('/jamaah/{id}/visa/upload', [App\Http\Controllers\Admin\OperasionalController::class, 'uploadVisaDocument'])
+        ->name('jamaah.visa.upload')->middleware('permission:upload_visa_documents');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -695,4 +982,4 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

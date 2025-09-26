@@ -10,22 +10,22 @@
 
     <div class="py-12">
       <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+        <!-- Progress Bar -->
+        <ProgressBar :current-step="2" :jamaah-data="jamaahData"
+                     @step-action="handleStepAction" @navigate-to-step="handleStepNavigation" />
+
         <!-- Progress Indicator -->
         <div class="mb-8">
           <div class="flex items-center justify-between">
-            <div class="flex items-center">
-              <div class="flex items-center text-green-600">
-                <div class="flex items-center justify-center w-8 h-8 bg-green-600 rounded-full">
-                  <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                  </svg>
-                </div>
-                <span class="ml-2 text-sm font-medium">Data Diri</span>
+            <div class="flex items-center text-green-600">
+              <div class="flex items-center justify-center w-8 h-8 bg-green-600 rounded-full">
+                <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                </svg>
               </div>
+              <span class="ml-2 text-sm font-medium">Pendaftaran & Dokumen</span>
             </div>
-            <div class="flex-1 mx-4 h-1 bg-gray-200">
-              <div class="h-1 bg-blue-600 w-1/2"></div>
-            </div>
+            <div class="flex-1 mx-4 h-1 bg-green-600"></div>
             <div class="flex items-center text-blue-600">
               <div class="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-full">
                 <span class="text-white text-sm font-bold">2</span>
@@ -37,7 +37,7 @@
               <div class="flex items-center justify-center w-8 h-8 bg-gray-300 rounded-full">
                 <span class="text-white text-sm font-bold">3</span>
               </div>
-              <span class="ml-2 text-sm font-medium">Upload Dokumen</span>
+              <span class="ml-2 text-sm font-medium">Verifikasi & Manasik</span>
             </div>
           </div>
         </div>
@@ -55,8 +55,9 @@
                 </div>
 
                 <div class="border-l-4 border-green-500 pl-4">
-                  <p class="text-sm text-gray-600">Jumlah DP yang harus dibayar</p>
-                  <p class="text-xl font-bold text-green-600">Rp {{ formatCurrency(dpAmount) }}</p>
+                  <p class="text-sm text-gray-600">DP yang Harus Dibayar</p>
+                  <p class="text-xl font-bold text-green-600">Rp {{ formatCurrency(jamaahData.expected_dp_amount || 1000000) }}</p>
+                  <p class="text-xs text-gray-500">Sesuai dengan yang Anda inputkan di pendaftaran (minimal Rp 1.000.000)</p>
                 </div>
 
                 <div class="bg-gray-50 p-4 rounded-lg">
@@ -108,14 +109,20 @@
                   <div class="relative">
                     <span class="absolute left-3 top-3 text-gray-500">Rp</span>
                     <input
-                      v-model="form.dp_amount"
-                      type="number"
+                      v-model="formattedDpAmount"
+                      @input="handleDpAmountInput"
+                      @blur="validateDpAmount"
+                      type="text"
                       class="w-full pl-12 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="0"
+                      :class="{ 'border-red-500': dpAmountError }"
+                      :placeholder="formatNumberWithDots(expectedDpAmount)"
                       required
                     >
                   </div>
-                  <p class="text-xs text-gray-500 mt-1">Masukkan nominal yang Anda transfer</p>
+                  <div class="mt-1">
+                    <p v-if="dpAmountError" class="text-xs text-red-500">{{ dpAmountError }}</p>
+                    <p v-else class="text-xs text-gray-500">Harus sesuai dengan yang diinputkan di pendaftaran: Rp {{ formatCurrency(expectedDpAmount) }}</p>
+                  </div>
                 </div>
 
                 <!-- Upload Bukti -->
@@ -207,6 +214,7 @@
 import { ref, computed } from 'vue'
 import { Head, Link, router } from '@inertiajs/vue3'
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue'
+import ProgressBar from '@/Components/Jamaah/ProgressBar.vue'
 
 const props = defineProps({
   jamaahData: {
@@ -215,24 +223,113 @@ const props = defineProps({
   }
 })
 
+// Make sure we get the correct numeric value
+const expectedDpFromStep1 = props.jamaahData.expected_dp_amount || 1000000
 const form = ref({
-  dp_amount: 5000000, // Default DP amount
+  dp_amount: expectedDpFromStep1, // DP amount from step 1
   bukti_transfer: null
 })
+
+console.log('Form dp_amount initialized with:', expectedDpFromStep1)
 
 const selectedFile = ref(null)
 const uploading = ref(false)
 const fileInput = ref(null)
+const dpAmountError = ref('')
+
+// Helper functions (define before using)
+const formatNumberWithDots = (value) => {
+  if (!value || value === 0) return ''
+
+  // Handle decimal numbers from Laravel (e.g., "3000000.00")
+  let numericValue = value
+  if (typeof value === 'string') {
+    // Remove any existing dots or commas, keep only digits
+    numericValue = parseFloat(value.replace(/[^\d.-]/g, ''))
+  }
+
+  // Convert to integer (remove decimal part)
+  const intValue = Math.floor(numericValue)
+
+  // Format with dots as thousand separators
+  return intValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
+
+// Debug the value first
+console.log('Expected DP Amount:', props.jamaahData.expected_dp_amount)
+console.log('Type:', typeof props.jamaahData.expected_dp_amount)
+console.log('Formatted result:', formatNumberWithDots(props.jamaahData.expected_dp_amount || 1000000))
+
+// Test with known values
+console.log('Test 3000000:', formatNumberWithDots(3000000))
+console.log('Test 1000000:', formatNumberWithDots(1000000))
+console.log('Test "3000000":', formatNumberWithDots("3000000"))
+
+// Initialize with proper formatting, ensure we get the right value
+const initialDpAmount = props.jamaahData.expected_dp_amount || 1000000
+const formattedDpAmount = ref(formatNumberWithDots(initialDpAmount))
 
 // Computed
 const dpAmount = computed(() => {
-  // Calculate DP based on package or default
-  return form.value.dp_amount || 5000000
+  return form.value.dp_amount || props.jamaahData.expected_dp_amount || 1000000
+})
+
+const expectedDpAmount = computed(() => {
+  return props.jamaahData.expected_dp_amount || 1000000
 })
 
 // Methods
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('id-ID').format(amount)
+}
+
+const parseFormattedNumber = (value) => {
+  // Remove dots and convert to number
+  return parseInt(value.replace(/\./g, '')) || 0
+}
+
+const handleDpAmountInput = (event) => {
+  const rawValue = event.target.value
+  const cleanedValue = rawValue.replace(/\D/g, '') // Remove non-digits
+
+  if (cleanedValue === '') {
+    formattedDpAmount.value = ''
+    form.value.dp_amount = 0
+    return
+  }
+
+  const formattedValue = formatNumberWithDots(cleanedValue)
+  formattedDpAmount.value = formattedValue
+  form.value.dp_amount = parseInt(cleanedValue)
+
+  // Clear error when user starts typing
+  if (dpAmountError.value) {
+    dpAmountError.value = ''
+  }
+}
+
+const validateDpAmount = () => {
+  const amount = form.value.dp_amount
+  const expectedAmount = expectedDpAmount.value
+  const minAmount = 1000000 // 1 juta
+
+  if (!amount || amount === 0) {
+    dpAmountError.value = 'Nominal DP harus diisi'
+    return false
+  }
+
+  if (amount < minAmount) {
+    dpAmountError.value = `Nominal DP tidak boleh kurang dari Rp ${formatCurrency(minAmount)}`
+    return false
+  }
+
+  if (amount !== expectedAmount) {
+    dpAmountError.value = `Nominal DP harus sesuai dengan yang diinputkan di pendaftaran: Rp ${formatCurrency(expectedAmount)}`
+    return false
+  }
+
+  dpAmountError.value = ''
+  return true
 }
 
 const handleFileSelect = (event) => {
@@ -254,14 +351,56 @@ const handleFileSelect = (event) => {
   }
 }
 
+const handleStepAction = (action) => {
+  switch (action) {
+    case 'continue-registration':
+      router.visit(route('jamaah.daftar'))
+      break
+    case 'pay-dp':
+      // Stay on payment page to show payment form
+      break
+    case 'view-payment-details':
+      // Stay on payment page
+      break
+    case 'view-manasik-schedule':
+      router.visit(route('jamaah.manasik'))
+      break
+    default:
+      console.log('Step action:', action)
+      break
+  }
+}
+
+const handleStepNavigation = (stepId) => {
+    // Navigate to appropriate page for testing
+    console.log(`🧪 Testing navigation to step ${stepId}`)
+
+    switch (stepId) {
+        case 1:
+            router.visit(route('jamaah.daftar'))
+            break
+        case 2:
+            // Stay on payment page
+            break
+        case 3:
+            router.visit(route('jamaah.installments'))
+            break
+        case 4:
+            router.visit(route('jamaah.dashboard'))
+            break
+        default:
+            break
+    }
+}
+
 const uploadPaymentProof = async () => {
-  if (!form.value.bukti_transfer) {
-    alert('Pilih file bukti transfer terlebih dahulu')
+  // Validate DP amount first
+  if (!validateDpAmount()) {
     return
   }
 
-  if (!form.value.dp_amount || form.value.dp_amount <= 0) {
-    alert('Masukkan nominal transfer yang valid')
+  if (!form.value.bukti_transfer) {
+    alert('Pilih file bukti transfer terlebih dahulu')
     return
   }
 
